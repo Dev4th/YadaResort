@@ -82,18 +82,18 @@ export default function Rooms() {
     <section
       id="rooms"
       ref={sectionRef}
-      className="py-20 lg:py-32 bg-white overflow-hidden"
+      className="py-20 lg:py-32 bg-resort-white overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="rooms-header text-center mb-16">
-          <span className="text-[#c9a962] text-sm font-medium tracking-wider uppercase mb-2 block">
+          <span className="text-resort-accent text-sm font-medium tracking-wider uppercase mb-2 block">
             ห้องพักของเรา
           </span>
-          <h2 className="text-3xl lg:text-4xl font-semibold text-[#1a1a1a] mb-4">
+          <h2 className="text-3xl lg:text-4xl font-semibold text-resort-text mb-4">
             เลือกห้องพักที่ใช่สำหรับคุณ
           </h2>
-          <p className="text-[#666] max-w-2xl mx-auto">
+          <p className="text-resort-text-secondary max-w-2xl mx-auto">
             ห้องพักหลากหลายสไตล์ให้เลือกสรร ตั้งแต่ห้องมาตรฐานไปจนถึงห้องแฟมิลี่สุดหรู
           </p>
         </div>
@@ -107,12 +107,12 @@ export default function Rooms() {
             return (
               <div
                 key={room.id}
-                className="room-card group bg-white rounded-xl overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300"
+                className="room-card group bg-resort-white rounded-xl overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300"
                 onMouseEnter={() => setHoveredRoom(room.id)}
                 onMouseLeave={() => setHoveredRoom(null)}
               >
                 {/* Image */}
-                <div className="relative h-52 overflow-hidden bg-gray-100">
+                <div className="relative h-52 overflow-hidden bg-resort-cream">
                   <img
                     src={room.images?.[0] || '/images/room-standard.jpg'}
                     alt={room.name_th}
@@ -120,7 +120,7 @@ export default function Rooms() {
                   />
                   {/* Room type label */}
                   <div className="absolute top-4 left-4">
-                    <span className="px-3 py-1.5 bg-white/90 backdrop-blur-sm text-[#1a1a1a] text-xs font-medium rounded-full">
+                    <span className="px-3 py-1.5 bg-white/90 backdrop-blur-sm text-resort-text text-xs font-medium rounded-full">
                       {roomType}
                     </span>
                   </div>
@@ -129,7 +129,7 @@ export default function Rooms() {
                   <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
                     <Button
                       onClick={() => handleBookRoom(room)}
-                      className="bg-white text-[#1a1a1a] hover:bg-gray-100 px-6 py-2 rounded-full font-medium"
+                      className="bg-resort-primary text-white hover:bg-resort-primary-hover px-6 py-2 rounded-full font-medium transition-all duration-300"
                       disabled={room.status !== 'available'}
                     >
                       จองเลย
@@ -139,21 +139,21 @@ export default function Rooms() {
 
                 {/* Content */}
                 <div className="p-5">
-                  <h3 className="text-lg font-semibold text-[#1a1a1a] mb-3">
+                  <h3 className="text-lg font-semibold text-resort-text mb-3">
                     {room.name}
                   </h3>
 
                   {/* Amenities Tags */}
                   <div className="flex flex-wrap gap-2 mb-4">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-resort-cream text-resort-text-secondary text-xs rounded-full">
                       <Wifi className="w-3 h-3" />
                       Wifi
                     </span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-resort-cream text-resort-text-secondary text-xs rounded-full">
                       <Tv className="w-3 h-3" />
                       TV
                     </span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-resort-cream text-resort-text-secondary text-xs rounded-full">
                       <Wind className="w-3 h-3" />
                       AC
                     </span>
@@ -162,12 +162,12 @@ export default function Rooms() {
                   {/* Price and Capacity */}
                   <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                     <div>
-                      <span className="text-xl font-bold text-[#1a1a1a]">
+                      <span className="text-xl font-bold text-resort-accent">
                         ฿{room.price?.toLocaleString()}
                       </span>
-                      <span className="text-sm text-gray-500">/คืน</span>
+                      <span className="text-sm text-resort-text-secondary">/คืน</span>
                     </div>
-                    <div className="flex items-center gap-1 text-gray-500 text-sm">
+                    <div className="flex items-center gap-1 text-resort-text-secondary text-sm">
                       <Users className="w-4 h-4" />
                       <span>{room.capacity} ท่าน</span>
                     </div>
@@ -196,30 +196,30 @@ export default function Rooms() {
                   className="w-full h-64 object-cover rounded-xl mb-6"
                 />
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-3xl font-bold text-[#1a1a1a]">
+                  <span className="text-3xl font-bold text-resort-accent">
                     ฿{selectedRoom.price?.toLocaleString()}
-                    <span className="text-lg text-[#666]">/คืน</span>
+                    <span className="text-lg text-resort-text-secondary">/คืน</span>
                   </span>
                 </div>
-                <p className="text-[#666] mb-6">{selectedRoom.description_th}</p>
+                <p className="text-resort-text-secondary mb-6">{selectedRoom.description_th}</p>
                 
                 <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="p-4 bg-[#f5f5f5] rounded-xl">
-                    <Users className="w-6 h-6 mb-2 text-[#c9a962]" />
-                    <span className="text-sm text-[#666]">{selectedRoom.capacity} ท่าน</span>
+                  <div className="p-4 bg-resort-cream rounded-xl">
+                    <Users className="w-6 h-6 mb-2 text-resort-accent" />
+                    <span className="text-sm text-resort-text-secondary">{selectedRoom.capacity} ท่าน</span>
                   </div>
-                  <div className="p-4 bg-[#f5f5f5] rounded-xl">
-                    <span className="text-sm text-[#666]">{selectedRoom.size} ตร.ม.</span>
+                  <div className="p-4 bg-resort-cream rounded-xl">
+                    <span className="text-sm text-resort-text-secondary">{selectedRoom.size} ตร.ม.</span>
                   </div>
                 </div>
 
                 <div className="mb-6">
-                  <h4 className="font-semibold mb-3">สิ่งอำนวยความสะดวก</h4>
+                  <h4 className="font-semibold mb-3 text-resort-text">สิ่งอำนวยความสะดวก</h4>
                   <div className="grid grid-cols-2 gap-2">
                     {selectedRoom.amenities?.map((amenity) => (
                       <div key={amenity} className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-[#c9a962]" />
-                        <span className="text-sm text-[#666]">{amenity}</span>
+                        <Check className="w-4 h-4 text-resort-primary" />
+                        <span className="text-sm text-resort-text-secondary">{amenity}</span>
                       </div>
                     ))}
                   </div>
@@ -230,7 +230,7 @@ export default function Rooms() {
                     setDetailOpen(false);
                     navigate(`/booking?room=${selectedRoom.id}`);
                   }}
-                  className="w-full bg-[#1e3a5f] hover:bg-[#2a4a6f] text-white py-3 rounded-lg"
+                  className="w-full bg-resort-primary hover:bg-resort-primary-hover text-white py-3 rounded-lg font-medium transition-all duration-300"
                   disabled={selectedRoom.status !== 'available'}
                 >
                   {selectedRoom.status === 'available' ? 'จองห้องนี้' : 'ไม่ว่าง'}

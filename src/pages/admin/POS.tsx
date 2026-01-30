@@ -87,7 +87,7 @@ export default function POS() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[#1a1a1a]">Check-in / Check-out</h1>
+        <h1 className="text-2xl font-bold text-resort-text">Check-in / Check-out</h1>
         <p className="text-gray-500">จัดการการเข้าพักและออกของลูกค้า</p>
       </div>
 
@@ -255,7 +255,7 @@ export default function POS() {
                 <p className="text-sm text-gray-500">
                   {rooms.find((r) => r.id === selectedBooking.room_id)?.name_th}
                 </p>
-                <p className="text-xl font-bold text-[#c9a962] mt-2">
+                <p className="text-xl font-bold text-resort-accent mt-2">
                   ฿{selectedBooking.total_amount.toLocaleString()}
                 </p>
               </div>
@@ -271,7 +271,7 @@ export default function POS() {
                         onClick={() => setSelectedPayment(method.id)}
                         className={`p-3 rounded-lg border-2 transition-colors ${
                           selectedPayment === method.id
-                            ? 'border-[#c9a962] bg-[#c9a962]/10'
+                            ? 'border-resort-accent bg-resort-accent/10'
                             : 'border-gray-200 hover:border-gray-300'
                         }`}
                       >
@@ -292,7 +292,7 @@ export default function POS() {
                   ยกเลิก
                 </Button>
                 <Button
-                  className="flex-1 bg-[#c9a962] hover:bg-[#d4b978]"
+                  className="flex-1 bg-resort-primary hover:bg-resort-primary-hover"
                   onClick={confirmAction}
                 >
                   {actionType === 'checkin' ? 'ยืนยัน Check-in' : 'ยืนยัน Check-out'}

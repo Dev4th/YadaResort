@@ -26,7 +26,7 @@ import {
   Cell,
 } from 'recharts';
 
-const COLORS = ['#c9a962', '#4ade80', '#60a5fa', '#f87171', '#a78bfa'];
+const COLORS = ['#2F5D50', '#4ade80', '#60a5fa', '#f87171', '#a78bfa'];
 
 export default function Reports() {
   const { bookings, fetchBookings } = useBookingStore();
@@ -82,7 +82,7 @@ export default function Reports() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#1a1a1a]">รายงาน</h1>
+          <h1 className="text-2xl font-bold text-resort-text">รายงาน</h1>
           <p className="text-gray-500">วิเคราะห์ข้อมูลและสถิติการดำเนินงาน</p>
         </div>
         <div className="flex gap-3">
@@ -111,13 +111,13 @@ export default function Reports() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-[#c9a962]">
+                <p className="text-2xl font-bold text-resort-accent">
                   ฿{stats.monthlyRevenue.toLocaleString()}
                 </p>
                 <p className="text-sm text-gray-500">รายได้รวม</p>
               </div>
-              <div className="w-10 h-10 rounded-lg bg-[#c9a962]/10 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-[#c9a962]" />
+              <div className="w-10 h-10 rounded-lg bg-resort-accent/10 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-resort-accent" />
               </div>
             </div>
           </CardContent>
@@ -191,7 +191,7 @@ export default function Reports() {
                     <Tooltip
                       formatter={(value: number) => `฿${value.toLocaleString()}`}
                     />
-                    <Bar dataKey="room" name="ห้องพัก" fill="#c9a962" />
+                    <Bar dataKey="room" name="ห้องพัก" fill="#2F5D50" />
                     <Bar dataKey="fnb" name="F&B" fill="#4ade80" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -214,9 +214,9 @@ export default function Reports() {
                     <Line
                       type="monotone"
                       dataKey="rate"
-                      stroke="#c9a962"
+                      stroke="#2F5D50"
                       strokeWidth={2}
-                      dot={{ fill: '#c9a962' }}
+                      dot={{ fill: '#2F5D50' }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -270,7 +270,7 @@ export default function Reports() {
                     className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                   >
                     <div className="flex items-center gap-4">
-                      <span className="w-8 h-8 rounded-full bg-[#c9a962] text-white flex items-center justify-center font-bold">
+                      <span className="w-8 h-8 rounded-full bg-resort-primary text-white flex items-center justify-center font-bold">
                         {index + 1}
                       </span>
                       <div>
@@ -280,7 +280,7 @@ export default function Reports() {
                         </p>
                       </div>
                     </div>
-                    <p className="font-bold text-[#c9a962]">
+                    <p className="font-bold text-resort-accent">
                       ฿{product.revenue.toLocaleString()}
                     </p>
                   </div>

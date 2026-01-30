@@ -128,10 +128,10 @@ export default function Inventory() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#1a1a1a]">คลังสินค้า</h1>
+          <h1 className="text-2xl font-bold text-resort-text">คลังสินค้า</h1>
           <p className="text-gray-500">จัดการสต็อกสินค้าและวัตถุดิบ</p>
         </div>
-        <Button onClick={() => setDialogOpen(true)} className="bg-[#c9a962] hover:bg-[#d4b978]">
+        <Button onClick={() => setDialogOpen(true)} className="bg-resort-primary hover:bg-resort-primary-hover">
           <Plus className="w-4 h-4 mr-2" />
           เพิ่มสินค้า
         </Button>
@@ -343,7 +343,7 @@ export default function Inventory() {
                 ยกเลิก
               </Button>
               <Button
-                className="flex-1 bg-[#c9a962] hover:bg-[#d4b978]"
+                className="flex-1 bg-resort-primary hover:bg-resort-primary-hover"
                 onClick={handleSubmit}
                 disabled={!formData.name_th || !formData.price || loading}
               >
@@ -405,7 +405,7 @@ export default function Inventory() {
                 ยกเลิก
               </Button>
               <Button
-                className="flex-1 bg-[#c9a962] hover:bg-[#d4b978]"
+                className="flex-1 bg-resort-primary hover:bg-resort-primary-hover"
                 onClick={handleAdjust}
                 disabled={adjustData.quantity === 0 || loading}
               >

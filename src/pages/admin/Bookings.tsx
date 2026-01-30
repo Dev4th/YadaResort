@@ -115,10 +115,10 @@ export default function Bookings() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#1a1a1a]">การจองทั้งหมด</h1>
+          <h1 className="text-2xl font-bold text-resort-text">การจองทั้งหมด</h1>
           <p className="text-gray-500">จัดการและดูรายละเอียดการจอง</p>
         </div>
-        <Button className="bg-[#c9a962] hover:bg-[#d4b978]">
+        <Button className="bg-resort-primary hover:bg-resort-primary-hover">
           <Plus className="w-4 h-4 mr-2" />
           รับจอง Walk-in
         </Button>
@@ -126,7 +126,7 @@ export default function Bookings() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card className="bg-[#c9a962] text-white">
+        <Card className="bg-resort-primary text-white">
           <CardContent className="p-4">
             <p className="text-3xl font-bold">{totalBookings}</p>
             <p className="text-sm opacity-80">ทั้งหมด</p>
@@ -215,7 +215,7 @@ export default function Bookings() {
                       }}
                     >
                       <td className="px-4 py-3">
-                        <span className="font-medium text-[#1e3a5f]">
+                        <span className="font-medium text-resort-primary">
                           {generateBookingId(booking.id)}
                         </span>
                       </td>
@@ -354,7 +354,7 @@ export default function Bookings() {
                     <div className="grid grid-cols-2 gap-2">
                       <Button
                         onClick={() => handleConfirm(selectedBooking)}
-                        className="bg-[#c9a962] hover:bg-[#d4b978]"
+                        className="bg-resort-primary hover:bg-resort-primary-hover"
                       >
                         <Check className="w-4 h-4 mr-2" />
                         ยืนยันการจอง
@@ -374,7 +374,7 @@ export default function Bookings() {
                   {selectedBooking.status === 'confirmed' && (
                     <Button
                       onClick={() => handleCheckIn(selectedBooking)}
-                      className="w-full bg-[#1e3a5f] hover:bg-[#2a4a6f]"
+                      className="w-full bg-resort-primary hover:bg-resort-primary-hover"
                     >
                       <Check className="w-4 h-4 mr-2" />
                       Check-in
@@ -385,7 +385,7 @@ export default function Bookings() {
                   {selectedBooking.status === 'checked-in' && (
                     <Button
                       onClick={() => handleCheckOut(selectedBooking)}
-                      className="w-full bg-[#1e3a5f] hover:bg-[#2a4a6f]"
+                      className="w-full bg-resort-primary hover:bg-resort-primary-hover"
                     >
                       <Check className="w-4 h-4 mr-2" />
                       Check-out

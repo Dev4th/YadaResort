@@ -198,14 +198,14 @@ export default function BookingDialog({ room, open, onOpenChange }: BookingDialo
             </div>
             
             {nights > 0 && (
-              <div className="p-4 bg-[#c9a962]/10 rounded-lg">
+              <div className="p-4 bg-resort-accent/10 rounded-lg">
                 <div className="flex justify-between mb-2">
                   <span>จำนวนคืน</span>
                   <span>{nights} คืน</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold">
                   <span>ยอดรวม</span>
-                  <span className="text-[#c9a962]">฿{totalAmount.toLocaleString()}</span>
+                  <span className="text-resort-accent">฿{totalAmount.toLocaleString()}</span>
                 </div>
               </div>
             )}
@@ -327,7 +327,7 @@ export default function BookingDialog({ room, open, onOpenChange }: BookingDialo
               <div className="border-t pt-2 mt-2">
                 <div className="flex justify-between text-xl font-bold">
                   <span>ยอดรวม</span>
-                  <span className="text-[#c9a962]">฿{totalAmount.toLocaleString()}</span>
+                  <span className="text-resort-accent">฿{totalAmount.toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -345,7 +345,7 @@ export default function BookingDialog({ room, open, onOpenChange }: BookingDialo
                     onClick={() => setPaymentMethod(method.id as any)}
                     className={`p-3 rounded-lg border-2 text-center transition-colors ${
                       paymentMethod === method.id
-                        ? 'border-[#c9a962] bg-[#c9a962]/10'
+                        ? 'border-resort-accent bg-resort-accent/10'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -408,7 +408,7 @@ export default function BookingDialog({ room, open, onOpenChange }: BookingDialo
             )}
             {step === 'payment' ? (
               <Button
-                className="flex-1 bg-[#c9a962] hover:bg-[#d4b978]"
+                className="flex-1 bg-resort-primary hover:bg-resort-primary-hover"
                 onClick={handleSubmit}
                 disabled={loading}
               >
@@ -423,7 +423,7 @@ export default function BookingDialog({ room, open, onOpenChange }: BookingDialo
               </Button>
             ) : (
               <Button
-                className="flex-1 bg-[#c9a962] hover:bg-[#d4b978]"
+                className="flex-1 bg-resort-primary hover:bg-resort-primary-hover"
                 onClick={handleContinue}
                 disabled={!canContinue()}
               >
@@ -435,7 +435,7 @@ export default function BookingDialog({ room, open, onOpenChange }: BookingDialo
         
         {step === 'success' && (
           <Button
-            className="w-full bg-[#c9a962] hover:bg-[#d4b978]"
+            className="w-full bg-resort-primary hover:bg-resort-primary-hover"
             onClick={() => onOpenChange(false)}
           >
             ปิด

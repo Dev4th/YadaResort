@@ -100,10 +100,10 @@ export default function Settings() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#1a1a1a]">ตั้งค่า</h1>
-          <p className="text-gray-500">จัดการการตั้งค่าระบบและผู้ใช้</p>
+          <h1 className="text-2xl font-bold text-resort-text">ตั้งค่า</h1>
+          <p className="text-resort-text-secondary">จัดการการตั้งค่าระบบและผู้ใช้</p>
         </div>
-        <Button onClick={handleSave} className="bg-[#c9a962] hover:bg-[#d4b978]">
+        <Button onClick={handleSave} className="bg-resort-primary hover:bg-resort-primary-hover transition-all duration-300">
           <Save className="w-4 h-4 mr-2" />
           บันทึก
         </Button>
@@ -251,7 +251,7 @@ export default function Settings() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-[#c9a962]" />
+                <CreditCard className="w-5 h-5 text-resort-accent" />
                 วิธีการชำระเงิน
               </CardTitle>
             </CardHeader>
@@ -278,7 +278,7 @@ export default function Settings() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <QrCode className="w-5 h-5 text-[#c9a962]" />
+                <QrCode className="w-5 h-5 text-resort-accent" />
                 PromptPay / QR Code
               </CardTitle>
             </CardHeader>
@@ -341,10 +341,10 @@ export default function Settings() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <Building className="w-5 h-5 text-[#c9a962]" />
+                <Building className="w-5 h-5 text-resort-accent" />
                 บัญชีธนาคาร
               </CardTitle>
-              <Button size="sm" onClick={addBankAccount} className="bg-[#c9a962] hover:bg-[#d4b978]">
+              <Button size="sm" onClick={addBankAccount} className="bg-resort-primary hover:bg-resort-primary-hover transition-all duration-300">
                 <Plus className="w-4 h-4 mr-2" />
                 เพิ่มบัญชี
               </Button>
@@ -427,7 +427,7 @@ export default function Settings() {
               <div className="p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
                 <div className="text-center space-y-1">
                   <h3 className="text-lg font-bold">{settings.hotelName}</h3>
-                  <p className="text-sm text-[#c9a962]">{settings.hotelNameTh}</p>
+                  <p className="text-sm text-resort-accent">{settings.hotelNameTh}</p>
                   <p className="text-xs text-gray-500">{settings.address}</p>
                   <p className="text-xs text-gray-500">โทร: {settings.phone}</p>
                   <p className="text-xs text-gray-500">เลขประจำตัวผู้เสียภาษี: {settings.taxId}</p>
@@ -445,7 +445,7 @@ export default function Settings() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>ผู้ใช้งานระบบ</CardTitle>
-              <Button size="sm" className="bg-[#c9a962] hover:bg-[#d4b978]">
+              <Button size="sm" className="bg-resort-primary hover:bg-resort-primary-hover">
                 <UserPlus className="w-4 h-4 mr-2" />
                 เพิ่มผู้ใช้
               </Button>
@@ -459,8 +459,8 @@ export default function Settings() {
                       className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-[#c9a962]/10 flex items-center justify-center">
-                          <Users className="w-5 h-5 text-[#c9a962]" />
+                        <div className="w-10 h-10 rounded-full bg-resort-accent/10 flex items-center justify-center">
+                          <Users className="w-5 h-5 text-resort-accent" />
                         </div>
                         <div>
                           <p className="font-medium">{name}</p>
@@ -607,7 +607,7 @@ export default function Settings() {
                 {Object.entries(rolePermissions).map(([role, permissions]) => (
                   <div key={role} className="border rounded-lg p-4">
                     <div className="flex items-center gap-3 mb-4">
-                      <Shield className="w-5 h-5 text-[#c9a962]" />
+                      <Shield className="w-5 h-5 text-resort-accent" />
                       <h4 className="font-semibold capitalize">
                         {role === 'owner'
                           ? 'เจ้าของ'

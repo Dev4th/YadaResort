@@ -19,9 +19,9 @@ import {
 const statsCards = [
   { key: 'todayCheckIns', label: 'Check-in วันนี้', icon: Calendar, color: 'bg-blue-500' },
   { key: 'todayCheckOuts', label: 'Check-out วันนี้', icon: Clock, color: 'bg-orange-500' },
-  { key: 'occupiedRooms', label: 'ห้องที่ใช้งาน', icon: Bed, color: 'bg-green-500' },
+  { key: 'occupiedRooms', label: 'ห้องที่ใช้งาน', icon: Bed, color: 'bg-resort-primary' },
   { key: 'availableRooms', label: 'ห้องว่าง', icon: Bed, color: 'bg-purple-500' },
-  { key: 'todayRevenue', label: 'รายได้วันนี้', icon: CreditCard, color: 'bg-[#c9a962]', format: 'currency' },
+  { key: 'todayRevenue', label: 'รายได้วันนี้', icon: CreditCard, color: 'bg-resort-accent', format: 'currency' },
   { key: 'pendingOrders', label: 'ออเดอร์รอดำเนินการ', icon: Coffee, color: 'bg-red-500' },
 ];
 
@@ -55,8 +55,8 @@ export default function Dashboard() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#1a1a1a]">แดชบอร์ด</h1>
-          <p className="text-gray-500">ภาพรวมการดำเนินงานของโฮมสเตย์</p>
+          <h1 className="text-2xl font-bold text-resort-text">แดชบอร์ด</h1>
+          <p className="text-resort-text-secondary">ภาพรวมการดำเนินงานของโฮมสเตย์</p>
         </div>
         <Button variant="outline" onClick={refreshStats}>
           รีเฟรชข้อมูล
@@ -243,7 +243,7 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-[#c9a962]" />
+                <CreditCard className="w-5 h-5 text-resort-accent" />
                 รายได้
               </CardTitle>
             </CardHeader>

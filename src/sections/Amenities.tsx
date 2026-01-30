@@ -79,16 +79,16 @@ export default function Amenities() {
     <section
       id="amenities"
       ref={sectionRef}
-      className="py-20 lg:py-32 bg-[#f5f5f5] overflow-hidden"
+      className="py-20 lg:py-32 bg-resort-cream overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="amenities-header text-center mb-16">
           <span className="section-label">สิ่งอำนวยความสะดวก</span>
-          <h2 className="text-3xl lg:text-4xl font-bold text-[#1a1a1a] mb-4 font-serif">
+          <h2 className="text-3xl lg:text-4xl font-bold text-resort-text mb-4 font-serif">
             ทุกความสะดวกสบายเพื่อคุณ
           </h2>
-          <p className="text-[#666] max-w-2xl mx-auto">
+          <p className="text-resort-text-secondary max-w-2xl mx-auto">
             เราจัดเตรียมสิ่งอำนวยความสะดวกครบครันเพื่อให้การเข้าพักของคุณสมบูรณ์แบบ
           </p>
         </div>
@@ -100,16 +100,16 @@ export default function Amenities() {
             return (
               <div
                 key={index}
-                className="amenity-item group bg-white rounded-2xl p-6 text-center hover:shadow-xl transition-all duration-300 cursor-pointer"
+                className="amenity-item group bg-resort-white rounded-2xl p-6 text-center hover:shadow-xl transition-all duration-300 cursor-pointer"
               >
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#c9a962]/10 flex items-center justify-center group-hover:bg-[#c9a962] transition-colors duration-300">
-                  <Icon className="w-8 h-8 text-[#c9a962] group-hover:text-white transition-colors duration-300 group-hover:rotate-12 transform" />
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-resort-primary/10 flex items-center justify-center group-hover:bg-resort-primary transition-colors duration-300">
+                  <Icon className="w-8 h-8 text-resort-primary group-hover:text-white transition-colors duration-300 group-hover:rotate-12 transform" />
                 </div>
-                <h3 className="font-semibold text-[#1a1a1a] mb-1">
+                <h3 className="font-semibold text-resort-text mb-1">
                   {amenity.nameTh}
                 </h3>
-                <p className="text-xs text-[#999] mb-2">{amenity.name}</p>
-                <p className="text-sm text-[#666]">{amenity.description}</p>
+                <p className="text-xs text-resort-text-secondary mb-2">{amenity.name}</p>
+                <p className="text-sm text-resort-text-secondary">{amenity.description}</p>
               </div>
             );
           })}

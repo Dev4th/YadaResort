@@ -5,6 +5,25 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Natural Resort Theme - Core Colors
+        'resort': {
+          // Primary - Natural Green
+          'primary': '#2F5D50',
+          'primary-hover': '#4A7C6D',
+          'primary-light': '#5A8A7B',
+          // Secondary - Backgrounds  
+          'cream': '#FAF9F6',
+          'white': '#FFFFFF',
+          // Accent - Wood Brown
+          'accent': '#C2A97E',
+          'accent-hover': '#A88B5A',
+          'accent-light': '#D4BE9A',
+          // Text
+          'text': '#1F2933',
+          'text-secondary': '#6B7280',
+          'text-muted': 'rgba(31, 41, 51, 0.6)',
+        },
+        // CSS Variable-based colors (for shadcn/ui)
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

@@ -148,7 +148,7 @@ export default function RoomCleaning() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[#1a1a1a]">ทำความสะอาดห้องพัก</h1>
+        <h1 className="text-2xl font-bold text-resort-text">ทำความสะอาดห้องพัก</h1>
         <p className="text-gray-500">จัดการงานทำความสะอาดห้องพัก</p>
       </div>
 
@@ -264,8 +264,8 @@ export default function RoomCleaning() {
                 className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-[#c9a962]/10 flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-[#c9a962]" />
+                  <div className="w-10 h-10 rounded-full bg-resort-accent/10 flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-resort-accent" />
                   </div>
                   <div>
                     <p className="font-medium">{task.room_name}</p>

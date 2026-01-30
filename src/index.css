@@ -6,35 +6,37 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
+    /* Natural Resort Theme - CSS Variables */
+    --background: 40 20% 98%; /* Cream White #FAF9F6 */
+    --foreground: 210 23% 16%; /* Primary Text #1F2933 */
+    --card: 0 0% 100%; /* Pure White #FFFFFF */
+    --card-foreground: 210 23% 16%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
-    --primary: 43 50% 59%;
-    --primary-foreground: 0 0% 10%;
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 10%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 40%;
-    --accent: 43 50% 59%;
-    --accent-foreground: 0 0% 10%;
+    --popover-foreground: 210 23% 16%;
+    --primary: 161 33% 27%; /* Natural Green #2F5D50 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 20% 98%; /* Cream White */
+    --secondary-foreground: 210 23% 16%;
+    --muted: 40 10% 95%;
+    --muted-foreground: 218 11% 46%; /* Secondary Text #6B7280 */
+    --accent: 39 35% 63%; /* Wood Brown #C2A97E */
+    --accent-foreground: 210 23% 16%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 88%;
-    --input: 0 0% 88%;
-    --ring: 43 50% 59%;
+    --border: 40 10% 88%;
+    --input: 40 10% 88%;
+    --ring: 161 33% 27%; /* Natural Green for focus */
     --radius: 0.5rem;
     
-    /* Custom Colors */
-    --gold: #c9a962;
-    --gold-light: #d4b978;
-    --gold-dark: #b89a52;
-    --dark: #1a1a1a;
-    --navy: #1e3a5f;
-    --gray: #666666;
-    --light-gray: #f5f5f5;
+    /* Direct Color Variables - Natural Resort Theme */
+    --resort-primary: #2F5D50;
+    --resort-primary-hover: #4A7C6D;
+    --resort-cream: #FAF9F6;
+    --resort-white: #FFFFFF;
+    --resort-accent: #C2A97E;
+    --resort-accent-hover: #A88B5A;
+    --resort-text: #1F2933;
+    --resort-text-secondary: #6B7280;
     
     /* Animation Easings */
     --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -68,24 +70,74 @@
 }
 
 @layer components {
+  /* Primary Button - Natural Green */
   .btn-primary {
-    @apply bg-[#c9a962] text-white px-6 py-3 rounded-lg font-medium transition-all duration-300;
+    @apply bg-resort-primary text-white px-6 py-3 rounded-lg font-medium transition-all duration-300;
   }
   
   .btn-primary:hover {
-    @apply bg-[#d4b978] scale-105;
-    box-shadow: 0 4px 20px rgba(201, 169, 98, 0.4);
+    @apply bg-resort-primary-hover;
+    box-shadow: 0 4px 20px rgba(47, 93, 80, 0.3);
+    transform: translateY(-1px);
   }
   
+  /* Secondary Button - Outlined */
+  .btn-secondary {
+    @apply bg-white text-resort-primary border-2 border-resort-primary px-6 py-3 rounded-lg font-medium transition-all duration-300;
+  }
+  
+  .btn-secondary:hover {
+    @apply bg-resort-primary text-white;
+  }
+  
+  /* Accent Button - Wood Brown (for highlights) */
+  .btn-accent {
+    @apply bg-resort-accent text-white px-6 py-3 rounded-lg font-medium transition-all duration-300;
+  }
+  
+  .btn-accent:hover {
+    @apply bg-resort-accent-hover;
+    box-shadow: 0 4px 20px rgba(194, 169, 126, 0.4);
+  }
+  
+  /* Section Label - Wood Brown accent */
   .section-label {
-    @apply text-[#c9a962] text-sm font-medium tracking-wider uppercase mb-4;
+    @apply text-resort-accent text-sm font-medium tracking-wider uppercase mb-4;
   }
   
+  /* Glass Effect for Navbar */
   .glass-effect {
     backdrop-filter: blur(20px);
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.95);
   }
   
+  /* Navbar scrolled with green background */
+  .navbar-scrolled {
+    @apply bg-resort-primary shadow-lg;
+  }
+  
+  /* Accent underline hover effect */
+  .accent-underline {
+    position: relative;
+  }
+  
+  .accent-underline::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: var(--resort-accent);
+    transition: all 0.25s var(--ease-out-expo);
+    transform: translateX(-50%);
+  }
+  
+  .accent-underline:hover::after {
+    width: 100%;
+  }
+  
+  /* Legacy gold-underline for compatibility */
   .gold-underline {
     position: relative;
   }
@@ -97,7 +149,7 @@
     left: 50%;
     width: 0;
     height: 2px;
-    background: var(--gold);
+    background: var(--resort-accent);
     transition: all 0.25s var(--ease-out-expo);
     transform: translateX(-50%);
   }
@@ -152,23 +204,23 @@
   }
 }
 
-/* Scrollbar Styling */
+/* Scrollbar Styling - Natural Green Theme */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #FAF9F6;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c9a962;
+  background: #2F5D50;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #b89a52;
+  background: #4A7C6D;
 }
 
 /* Reduced Motion */

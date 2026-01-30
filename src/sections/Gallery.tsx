@@ -129,16 +129,16 @@ export default function Gallery() {
     <section
       id="gallery"
       ref={sectionRef}
-      className="py-20 lg:py-32 bg-white overflow-hidden"
+      className="py-20 lg:py-32 bg-resort-white overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="gallery-header text-center mb-16">
           <span className="section-label">แกลเลอรี่</span>
-          <h2 className="text-3xl lg:text-4xl font-bold text-[#1a1a1a] mb-4 font-serif">
+          <h2 className="text-3xl lg:text-4xl font-bold text-resort-text mb-4 font-serif">
             บรรยากาศ Yada Homestay
           </h2>
-          <p className="text-[#666] max-w-2xl mx-auto">
+          <p className="text-resort-text-secondary max-w-2xl mx-auto">
             ชมภาพบรรยากาศและความสวยงามของที่พักเรา
           </p>
         </div>
@@ -222,7 +222,7 @@ export default function Gallery() {
                 key={index}
                 className={`w-2 h-2 rounded-full transition-all duration-300 ${
                   index === currentImageIndex
-                    ? 'bg-[#c9a962] w-6'
+                    ? 'bg-resort-accent w-6'
                     : 'bg-white/50 hover:bg-white/80'
                 }`}
                 onClick={(e) => {

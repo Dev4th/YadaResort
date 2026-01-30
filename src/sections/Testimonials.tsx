@@ -111,16 +111,16 @@ export default function Testimonials() {
     <section
       id="testimonials"
       ref={sectionRef}
-      className="py-20 lg:py-32 bg-[#f5f5f5] overflow-hidden"
+      className="py-20 lg:py-32 bg-resort-cream overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="testimonials-header text-center mb-16">
           <span className="section-label">รีวิวจากลูกค้า</span>
-          <h2 className="text-3xl lg:text-4xl font-bold text-[#1a1a1a] mb-4 font-serif">
+          <h2 className="text-3xl lg:text-4xl font-bold text-resort-text mb-4 font-serif">
             เสียงจากผู้เข้าพัก
           </h2>
-          <p className="text-[#666] max-w-2xl mx-auto">
+          <p className="text-resort-text-secondary max-w-2xl mx-auto">
             อ่านประสบการณ์จริงจากผู้เข้าพักของเรา
           </p>
         </div>
@@ -129,11 +129,11 @@ export default function Testimonials() {
         <div className="testimonials-container relative max-w-4xl mx-auto">
           {/* Quote Icon */}
           <div className="absolute -top-8 left-1/2 -translate-x-1/2">
-            <Quote className="w-16 h-16 text-[#c9a962]/20" />
+            <Quote className="w-16 h-16 text-resort-primary/20" />
           </div>
 
           {/* Main Card */}
-          <div className="testimonial-card bg-white rounded-3xl shadow-xl p-8 md:p-12 text-center relative">
+          <div className="testimonial-card bg-resort-white rounded-3xl shadow-xl p-8 md:p-12 text-center relative">
             {/* Stars */}
             <div className="flex justify-center gap-1 mb-6">
               {[...Array(5)].map((_, i) => (
@@ -141,7 +141,7 @@ export default function Testimonials() {
                   key={i}
                   className={`w-6 h-6 ${
                     i < currentTestimonial.rating
-                      ? 'fill-[#c9a962] text-[#c9a962]'
+                      ? 'fill-resort-accent text-resort-accent'
                       : 'text-gray-300'
                   }`}
                 />
@@ -149,22 +149,22 @@ export default function Testimonials() {
             </div>
 
             {/* Quote */}
-            <p className="text-xl md:text-2xl text-[#1a1a1a] leading-relaxed mb-8 font-light italic">
+            <p className="text-xl md:text-2xl text-resort-text leading-relaxed mb-8 font-light italic">
               "{currentTestimonial.comment}"
             </p>
 
             {/* Author */}
             <div className="flex items-center justify-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-[#c9a962]/10 flex items-center justify-center">
-                <span className="text-xl font-bold text-[#c9a962]">
+              <div className="w-14 h-14 rounded-full bg-resort-primary/10 flex items-center justify-center">
+                <span className="text-xl font-bold text-resort-primary">
                   {currentTestimonial.name.charAt(0)}
                 </span>
               </div>
               <div className="text-left">
-                <p className="font-semibold text-[#1a1a1a]">
+                <p className="font-semibold text-resort-text">
                   {currentTestimonial.name}
                 </p>
-                <p className="text-sm text-[#666]">{currentTestimonial.location}</p>
+                <p className="text-sm text-resort-text-secondary">{currentTestimonial.location}</p>
               </div>
             </div>
           </div>
@@ -173,7 +173,7 @@ export default function Testimonials() {
           <div className="flex items-center justify-center gap-4 mt-8">
             <button
               onClick={prevTestimonial}
-              className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-[#c9a962] hover:text-white transition-colors duration-300"
+              className="w-12 h-12 rounded-full bg-resort-white shadow-md flex items-center justify-center hover:bg-resort-primary hover:text-white transition-colors duration-300"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -189,8 +189,8 @@ export default function Testimonials() {
                   }}
                   className={`w-3 h-3 rounded-full transition-all duration-300 ${
                     index === currentIndex
-                      ? 'bg-[#c9a962] w-8'
-                      : 'bg-[#d0d0d0] hover:bg-[#999]'
+                      ? 'bg-resort-primary w-8'
+                      : 'bg-gray-300 hover:bg-gray-400'
                   }`}
                 />
               ))}
@@ -198,7 +198,7 @@ export default function Testimonials() {
 
             <button
               onClick={nextTestimonial}
-              className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-[#c9a962] hover:text-white transition-colors duration-300"
+              className="w-12 h-12 rounded-full bg-resort-white shadow-md flex items-center justify-center hover:bg-resort-primary hover:text-white transition-colors duration-300"
             >
               <ChevronRight className="w-5 h-5" />
             </button>

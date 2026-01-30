@@ -132,16 +132,16 @@ export default function Contact() {
     <section
       id="contact"
       ref={sectionRef}
-      className="py-20 lg:py-32 bg-white overflow-hidden"
+      className="py-20 lg:py-32 bg-resort-white overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="contact-header text-center mb-16">
           <span className="section-label">ที่ตั้ง</span>
-          <h2 className="text-3xl lg:text-4xl font-bold text-[#1a1a1a] mb-4 font-serif">
+          <h2 className="text-3xl lg:text-4xl font-bold text-resort-text mb-4 font-serif">
             มาเยือน Yada Homestay
           </h2>
-          <p className="text-[#666] max-w-2xl mx-auto">
+          <p className="text-resort-text-secondary max-w-2xl mx-auto">
             ตั้งอยู่ในจังหวัดเพชรบุรี ใกล้แหล่งท่องเที่ยวและธรรมชาติ
           </p>
         </div>
@@ -149,8 +149,8 @@ export default function Contact() {
         <div className="contact-content grid lg:grid-cols-2 gap-12 items-start">
           {/* Contact Info */}
           <div className="contact-info">
-            <div className="bg-[#f5f5f5] rounded-2xl p-8">
-              <h3 className="text-xl font-bold text-[#1a1a1a] mb-6 font-serif">
+            <div className="bg-resort-cream rounded-2xl p-8">
+              <h3 className="text-xl font-bold text-resort-text mb-6 font-serif">
                 ข้อมูลติดต่อ
               </h3>
 
@@ -159,12 +159,12 @@ export default function Contact() {
                   const Icon = item.icon;
                   const content = (
                     <div className="flex items-start gap-4 group">
-                      <div className="w-12 h-12 rounded-full bg-[#c9a962]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#c9a962] transition-colors duration-300">
-                        <Icon className="w-5 h-5 text-[#c9a962] group-hover:text-white transition-colors duration-300" />
+                      <div className="w-12 h-12 rounded-full bg-resort-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-resort-primary transition-colors duration-300">
+                        <Icon className="w-5 h-5 text-resort-primary group-hover:text-white transition-colors duration-300" />
                       </div>
                       <div>
-                        <p className="text-sm text-[#999] mb-1">{item.title}</p>
-                        <p className="text-[#1a1a1a] font-medium">{item.content}</p>
+                        <p className="text-sm text-resort-text-secondary mb-1">{item.title}</p>
+                        <p className="text-resort-text font-medium">{item.content}</p>
                       </div>
                     </div>
                   );
@@ -184,24 +184,24 @@ export default function Contact() {
               </div>
 
               {/* Social Links */}
-              <div className="mt-8 pt-8 border-t border-[#e0e0e0]">
-                <p className="text-sm text-[#999] mb-4">ติดตามเรา</p>
+              <div className="mt-8 pt-8 border-t border-gray-200">
+                <p className="text-sm text-resort-text-secondary mb-4">ติดตามเรา</p>
                 <div className="flex gap-4">
                   <a
                     href="#"
-                    className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-[#c9a962] hover:text-white transition-colors duration-300"
+                    className="w-10 h-10 rounded-full bg-resort-white shadow-md flex items-center justify-center hover:bg-resort-primary hover:text-white transition-colors duration-300"
                   >
                     <Facebook className="w-5 h-5" />
                   </a>
                   <a
                     href="#"
-                    className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-[#c9a962] hover:text-white transition-colors duration-300"
+                    className="w-10 h-10 rounded-full bg-resort-white shadow-md flex items-center justify-center hover:bg-resort-primary hover:text-white transition-colors duration-300"
                   >
                     <Instagram className="w-5 h-5" />
                   </a>
                   <a
                     href="#"
-                    className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-[#c9a962] hover:text-white transition-colors duration-300"
+                    className="w-10 h-10 rounded-full bg-resort-white shadow-md flex items-center justify-center hover:bg-resort-primary hover:text-white transition-colors duration-300"
                   >
                     <MessageCircle className="w-5 h-5" />
                   </a>
@@ -211,19 +211,19 @@ export default function Contact() {
 
             {/* Nearby Attractions */}
             <div className="mt-8">
-              <h3 className="text-xl font-bold text-[#1a1a1a] mb-4 font-serif">
+              <h3 className="text-xl font-bold text-resort-text mb-4 font-serif">
                 แหล่งท่องเที่ยวใกล้เคียง
               </h3>
               <div className="attractions-list grid grid-cols-2 gap-3">
                 {nearbyAttractions.map((attraction, index) => (
                   <div
                     key={index}
-                    className="attraction-item bg-[#f5f5f5] rounded-xl p-4 hover:bg-[#c9a962]/10 transition-colors duration-300"
+                    className="attraction-item bg-resort-cream rounded-xl p-4 hover:bg-resort-primary/10 transition-colors duration-300"
                   >
-                    <p className="font-medium text-[#1a1a1a] text-sm">
+                    <p className="font-medium text-resort-text text-sm">
                       {attraction.name}
                     </p>
-                    <p className="text-xs text-[#c9a962] mt-1">
+                    <p className="text-xs text-resort-accent mt-1">
                       {attraction.distance}
                     </p>
                   </div>
@@ -234,7 +234,7 @@ export default function Contact() {
 
           {/* Map */}
           <div className="contact-map">
-            <div className="bg-[#f5f5f5] rounded-2xl overflow-hidden shadow-lg">
+            <div className="bg-resort-cream rounded-2xl overflow-hidden shadow-lg">
               <div className="aspect-video relative">
                 <iframe
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d288.06327731890286!2d99.92220940496846!3d13.128675584188482!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x30fd272d77c7a4e7%3A0x10c8085764cd1183!2z4LiN4Liy4LiU4Liy4LmC4Liu4Lih4Liq4LmA4LiV4Lii4LmMIHlhZGEgaG9tZSBzdGF5!5e1!3m2!1sth!2sth!4v1769802005809!5m2!1sth!2sth"
@@ -249,10 +249,10 @@ export default function Contact() {
                 />
               </div>
               <div className="p-6">
-                <h4 className="font-semibold text-[#1a1a1a] mb-2">
+                <h4 className="font-semibold text-resort-text mb-2">
                   การเดินทาง
                 </h4>
-                <p className="text-sm text-[#666]">
+                <p className="text-sm text-resort-text-secondary">
                   จากกรุงเทพฯ ใช้เวลาเดินทางประมาณ 2 ชั่วโมง
                   ผ่านทางถนนเพชรเกษม (ทางหลวงหมายเลข 4)
                   เลี้ยวซ้ายที่แยกธงชัย เข้ามาประมาณ 2 กิโลเมตร

@@ -56,7 +56,7 @@ export default function Guests() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[#1a1a1a]">ลูกค้า</h1>
+        <h1 className="text-2xl font-bold text-resort-text">ลูกค้า</h1>
         <p className="text-gray-500">จัดการข้อมูลลูกค้าและประวัติการเข้าพัก</p>
       </div>
 
@@ -81,8 +81,8 @@ export default function Guests() {
           <Card key={index} className="hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-full bg-[#c9a962]/10 flex items-center justify-center flex-shrink-0">
-                  <User className="w-7 h-7 text-[#c9a962]" />
+                <div className="w-14 h-14 rounded-full bg-resort-accent/10 flex items-center justify-center flex-shrink-0">
+                  <User className="w-7 h-7 text-resort-accent" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-lg truncate">{guest.name}</h3>
@@ -101,7 +101,7 @@ export default function Guests() {
 
               <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-[#c9a962]">
+                  <p className="text-2xl font-bold text-resort-accent">
                     {guest.totalVisits}
                   </p>
                   <p className="text-sm text-gray-500">ครั้งที่เข้าพัก</p>
@@ -151,7 +151,7 @@ export default function Guests() {
               <div className="space-y-6">
                 {/* Guest Info */}
                 <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="w-16 h-16 rounded-full bg-[#c9a962] flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-full bg-resort-primary flex items-center justify-center">
                     <span className="text-2xl font-bold text-white">
                       {selectedGuest.name.charAt(0)}
                     </span>
@@ -176,7 +176,7 @@ export default function Guests() {
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-4">
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <p className="text-3xl font-bold text-[#c9a962]">
+                    <p className="text-3xl font-bold text-resort-accent">
                       {selectedGuest.totalVisits}
                     </p>
                     <p className="text-sm text-gray-500">ครั้งที่เข้าพัก</p>
@@ -242,7 +242,7 @@ export default function Guests() {
                               </p>
                             </div>
                             <div className="text-right">
-                              <p className="font-bold text-[#c9a962]">
+                              <p className="font-bold text-resort-accent">
                                 ฿{booking.total_amount.toLocaleString()}
                               </p>
                               <span

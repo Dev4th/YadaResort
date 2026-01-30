@@ -77,7 +77,7 @@ function Sidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-[#1a1a1a] text-white transition-transform duration-300 ${
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-resort-primary text-white transition-transform duration-300 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
@@ -86,7 +86,7 @@ function Sidebar() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold font-serif">Yada Homestay</h1>
-              <p className="text-xs text-[#c9a962]">ระบบจัดการ</p>
+              <p className="text-xs text-resort-accent">ระบบจัดการ</p>
             </div>
             <button
               onClick={toggleSidebar}
@@ -100,8 +100,8 @@ function Sidebar() {
         {/* User Info */}
         <div className="p-4 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#c9a962] flex items-center justify-center">
-              <span className="font-bold text-[#1a1a1a]">
+            <div className="w-10 h-10 rounded-full bg-resort-accent flex items-center justify-center">
+              <span className="font-bold text-resort-text">
                 {user?.name?.charAt(0) || 'A'}
               </span>
             </div>
@@ -137,7 +137,7 @@ function Sidebar() {
                 end={item.path === ''}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                   isActive
-                    ? 'bg-[#c9a962] text-[#1a1a1a]'
+                    ? 'bg-resort-accent text-resort-text'
                     : 'hover:bg-white/10 text-white/80'
                 }`}
               >
@@ -149,7 +149,7 @@ function Sidebar() {
         </nav>
 
         {/* Logout */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10 bg-[#1a1a1a]">
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10 bg-resort-primary">
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-3 w-full rounded-lg hover:bg-white/10 text-white/80 transition-colors"
@@ -207,11 +207,11 @@ function Header() {
           </button>
           
           <div>
-            <h2 className="text-xl font-bold text-[#1a1a1a]">{getPageTitle()}</h2>
+            <h2 className="text-xl font-bold text-resort-text">{getPageTitle()}</h2>
             <nav className="hidden md:flex items-center gap-2 text-sm text-gray-500">
               <span>แอดมิน</span>
               <ChevronRight className="w-4 h-4" />
-              <span className="text-[#1a1a1a]">{getPageTitle()}</span>
+              <span className="text-resort-text">{getPageTitle()}</span>
             </nav>
           </div>
         </div>
@@ -242,7 +242,7 @@ function Header() {
           {/* Quick Actions */}
           <Button
             size="sm"
-            className="bg-[#c9a962] hover:bg-[#d4b978] hidden sm:flex"
+            className="bg-resort-primary hover:bg-resort-primary-hover hidden sm:flex"
             onClick={() => window.location.href = '/admin/bookings'}
           >
             + จองห้องใหม่
@@ -286,7 +286,7 @@ function Login() {
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-[#c9a962] text-white flex-col justify-center p-12 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-resort-primary text-white flex-col justify-center p-12 relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2" />
@@ -324,14 +324,14 @@ function Login() {
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
-            <h1 className="text-2xl font-bold font-serif text-[#1e3a5f]">YadaHomestay</h1>
-            <p className="text-[#c9a962]">ระบบจัดการ</p>
+            <h1 className="text-2xl font-bold font-serif text-resort-primary">YadaHomestay</h1>
+            <p className="text-resort-accent">ระบบจัดการ</p>
           </div>
 
           {/* Login Card */}
           <div className="bg-white rounded-2xl shadow-lg p-8">
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-[#1a1a1a]">เข้าสู่ระบบ</h2>
+              <h2 className="text-2xl font-bold text-resort-text">เข้าสู่ระบบ</h2>
               <p className="text-gray-500 mt-1">กรุณาเข้าสู่ระบบเพื่อดำเนินการต่อ</p>
             </div>
 
@@ -351,7 +351,7 @@ function Login() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="admin"
-                  className="w-full px-4 py-3 bg-gray-100 border-0 rounded-lg focus:ring-2 focus:ring-[#1e3a5f]"
+                  className="w-full px-4 py-3 bg-gray-100 border-0 rounded-lg focus:ring-2 focus:ring-resort-primary"
                   required
                 />
               </div>
@@ -366,7 +366,7 @@ function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••"
-                    className="w-full px-4 py-3 bg-gray-100 border-0 rounded-lg focus:ring-2 focus:ring-[#1e3a5f] pr-12"
+                    className="w-full px-4 py-3 bg-gray-100 border-0 rounded-lg focus:ring-2 focus:ring-resort-primary pr-12"
                     required
                   />
                   <button
@@ -385,7 +385,7 @@ function Login() {
 
               <Button
                 type="submit"
-                className="w-full bg-[#c9a962] hover:bg-[#e2c075] text-white py-3 rounded-lg font-medium"
+                className="w-full bg-resort-primary hover:bg-resort-primary-hover text-white py-3 rounded-lg font-medium transition-all duration-300"
                 disabled={loading}
               >
                 {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
@@ -427,7 +427,7 @@ function Login() {
 
           {/* Back to Home */}
           <div className="mt-6 text-center">
-            <a href="/" className="text-sm text-gray-500 hover:text-[#c9a962] flex items-center justify-center gap-2">
+            <a href="/" className="text-sm text-gray-500 hover:text-resort-primary flex items-center justify-center gap-2">
               ← กลับไปหน้าหลัก
             </a>
           </div>
@@ -478,7 +478,7 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-[#c9a962] border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-4 border-resort-primary border-t-transparent rounded-full" />
       </div>
     );
   }

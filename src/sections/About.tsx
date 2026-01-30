@@ -122,7 +122,7 @@ export default function About() {
     <section
       id="about"
       ref={sectionRef}
-      className="py-20 lg:py-32 bg-[#f5f5f5] overflow-hidden"
+      className="py-20 lg:py-32 bg-resort-cream overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
@@ -138,23 +138,23 @@ export default function About() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
             </div>
             {/* Floating badge */}
-            <div className="absolute -bottom-6 -right-6 bg-white rounded-xl shadow-xl p-6">
+            <div className="absolute -bottom-6 -right-6 bg-resort-white rounded-xl shadow-xl p-6">
               <div className="text-center">
-                <span className="text-4xl font-bold text-[#c9a962]">5+</span>
-                <p className="text-sm text-[#666] mt-1">ปีประสบการณ์</p>
+                <span className="text-4xl font-bold text-resort-primary">5+</span>
+                <p className="text-sm text-resort-text-secondary mt-1">ปีประสบการณ์</p>
               </div>
             </div>
-            {/* Gold accent */}
-            <div className="absolute -top-4 -left-4 w-24 h-24 border-2 border-[#c9a962] rounded-xl -z-10" />
+            {/* Accent border */}
+            <div className="absolute -top-4 -left-4 w-24 h-24 border-2 border-resort-accent rounded-xl -z-10" />
           </div>
 
           {/* Content */}
           <div ref={contentRef}>
             <span className="about-label section-label">เกี่ยวกับเรา</span>
-            <h2 className="about-title text-3xl lg:text-4xl font-bold text-[#1a1a1a] mb-6 font-serif">
+            <h2 className="about-title text-3xl lg:text-4xl font-bold text-resort-text mb-6 font-serif">
               Yada Homestay | ญาดาโฮมสเตย์
             </h2>
-            <p className="about-text text-[#666] leading-relaxed mb-8">
+            <p className="about-text text-resort-text-secondary leading-relaxed mb-8">
               ที่พักสไตล์โฮมสเตย์ในเพชรบุรีที่ผสมผสานความสะดวกสบายของที่พักสมัยใหม่เข้ากับเสน่ห์ของธรรมชาติ
               เรามุ่งมั่นที่จะให้บริการที่อบอุ่นและเป็นกันเอง
               เพื่อให้ทุกการเข้าพักของคุณเป็นประสบการณ์ที่น่าจดจำ
@@ -167,10 +167,10 @@ export default function About() {
                   key={index}
                   className="about-feature flex items-center gap-4 group"
                 >
-                  <div className="w-10 h-10 rounded-full bg-[#c9a962]/10 flex items-center justify-center group-hover:bg-[#c9a962] transition-colors duration-300">
-                    <Check className="w-5 h-5 text-[#c9a962] group-hover:text-white transition-colors duration-300" />
+                  <div className="w-10 h-10 rounded-full bg-resort-primary/10 flex items-center justify-center group-hover:bg-resort-primary transition-colors duration-300">
+                    <Check className="w-5 h-5 text-resort-primary group-hover:text-white transition-colors duration-300" />
                   </div>
-                  <span className="text-[#1a1a1a] group-hover:translate-x-1 transition-transform duration-200">
+                  <span className="text-resort-text group-hover:translate-x-1 transition-transform duration-200">
                     {feature.text}
                   </span>
                 </div>
@@ -178,18 +178,18 @@ export default function About() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-6 pt-8 border-t border-[#e0e0e0]">
+            <div className="grid grid-cols-3 gap-6 pt-8 border-t border-gray-200">
               <div className="text-center">
-                <span className="text-3xl font-bold text-[#c9a962]">12</span>
-                <p className="text-sm text-[#666] mt-1">ห้องพัก</p>
+                <span className="text-3xl font-bold text-resort-primary">12</span>
+                <p className="text-sm text-resort-text-secondary mt-1">ห้องพัก</p>
               </div>
               <div className="text-center">
-                <span className="text-3xl font-bold text-[#c9a962]">500+</span>
-                <p className="text-sm text-[#666] mt-1">ลูกค้าพึงพอใจ</p>
+                <span className="text-3xl font-bold text-resort-primary">500+</span>
+                <p className="text-sm text-resort-text-secondary mt-1">ลูกค้าพึงพอใจ</p>
               </div>
               <div className="text-center">
-                <span className="text-3xl font-bold text-[#c9a962]">4.8</span>
-                <p className="text-sm text-[#666] mt-1">คะแนนรีวิว</p>
+                <span className="text-3xl font-bold text-resort-primary">4.8</span>
+                <p className="text-sm text-resort-text-secondary mt-1">คะแนนรีวิว</p>
               </div>
             </div>
           </div>

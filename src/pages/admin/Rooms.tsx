@@ -62,10 +62,10 @@ export default function RoomsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#1a1a1a]">จัดการห้องพัก</h1>
+          <h1 className="text-2xl font-bold text-resort-text">จัดการห้องพัก</h1>
           <p className="text-gray-500">ดูและจัดการสถานะห้องพักทุกห้อง</p>
         </div>
-        <Button className="bg-[#c9a962] hover:bg-[#d4b978]">
+        <Button className="bg-resort-primary hover:bg-resort-primary-hover">
           <Plus className="w-4 h-4 mr-2" />
           เพิ่มห้องพัก
         </Button>
@@ -157,7 +157,7 @@ export default function RoomsPage() {
             variant={viewMode === 'grid' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => setViewMode('grid')}
-            className={viewMode === 'grid' ? 'bg-[#c9a962]' : ''}
+            className={viewMode === 'grid' ? 'bg-resort-primary' : ''}
           >
             <LayoutGrid className="w-4 h-4" />
           </Button>
@@ -165,7 +165,7 @@ export default function RoomsPage() {
             variant={viewMode === 'list' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => setViewMode('list')}
-            className={viewMode === 'list' ? 'bg-[#c9a962]' : ''}
+            className={viewMode === 'list' ? 'bg-resort-primary' : ''}
           >
             <List className="w-4 h-4" />
           </Button>
@@ -181,7 +181,7 @@ export default function RoomsPage() {
           return (
             <Card
               key={room.id}
-              className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] border-2 hover:border-[#c9a962]"
+              className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] border-2 hover:border-resort-accent"
               onClick={() => {
                 setSelectedRoom(room);
                 setDetailOpen(true);
@@ -192,11 +192,11 @@ export default function RoomsPage() {
                   <div className={`w-3 h-3 rounded-full ${statusDot[room.status]}`} />
                   <span className="text-xs text-gray-500">{roomType}</span>
                 </div>
-                <h3 className="text-2xl font-bold text-[#1a1a1a] mb-1">{roomNumber}</h3>
+                <h3 className="text-2xl font-bold text-resort-text mb-1">{roomNumber}</h3>
                 <p className="text-sm text-gray-600 mb-3">{room.name_th || room.name}</p>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-500">{room.capacity} ท่าน</span>
-                  <span className="font-semibold text-[#c9a962]">฿{room.price?.toLocaleString()}</span>
+                  <span className="font-semibold text-resort-accent">฿{room.price?.toLocaleString()}</span>
                 </div>
               </CardContent>
             </Card>
@@ -236,7 +236,7 @@ export default function RoomsPage() {
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <p className="text-xs text-gray-500 mb-1">ราคา/คืน</p>
-                    <p className="font-medium text-[#c9a962]">฿{selectedRoom.price?.toLocaleString()}</p>
+                    <p className="font-medium text-resort-accent">฿{selectedRoom.price?.toLocaleString()}</p>
                   </div>
                 </div>
 

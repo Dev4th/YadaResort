@@ -73,10 +73,10 @@ export default function Footer() {
   };
 
   return (
-    <footer ref={footerRef} className="bg-[#1a1a1a] text-white pt-16 pb-8">
+    <footer ref={footerRef} className="bg-resort-primary text-white pt-16 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Gold Divider */}
-        <div className="footer-divider h-px bg-gradient-to-r from-transparent via-[#c9a962] to-transparent mb-16 origin-left" />
+        {/* Accent Divider */}
+        <div className="footer-divider h-px bg-gradient-to-r from-transparent via-resort-accent to-transparent mb-16 origin-left" />
 
         {/* Main Content */}
         <div className="footer-content grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
@@ -85,7 +85,7 @@ export default function Footer() {
             <h3 className="text-2xl font-bold font-serif mb-2">
               Yada Homestay
             </h3>
-            <p className="text-[#c9a962] text-sm mb-4">| ญาดาโฮมสเตย์</p>
+            <p className="text-resort-accent text-sm mb-4">| ญาดาโฮมสเตย์</p>
             <p className="text-white/70 text-sm leading-relaxed mb-6">
               สัมผัสความสงบท่ามกลางธรรมชาติ
               ที่พักสไตล์โฮมสเตย์ในเพชรบุรีที่ผสมผสานความสะดวกสบายและเสน่ห์ของธรรมชาติ
@@ -94,19 +94,19 @@ export default function Footer() {
             <div className="flex gap-3">
               <a
                 href="#"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#c9a962] transition-colors duration-300"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-resort-accent transition-colors duration-300"
               >
                 <Facebook className="w-5 h-5" />
               </a>
               <a
                 href="#"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#c9a962] transition-colors duration-300"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-resort-accent transition-colors duration-300"
               >
                 <Instagram className="w-5 h-5" />
               </a>
               <a
                 href="#"
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#c9a962] transition-colors duration-300"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-resort-accent transition-colors duration-300"
               >
                 <MessageCircle className="w-5 h-5" />
               </a>
@@ -125,7 +125,7 @@ export default function Footer() {
                       e.preventDefault();
                       scrollToSection(link.href);
                     }}
-                    className="text-white/70 hover:text-[#c9a962] hover:translate-x-1 transition-all duration-200 inline-block"
+                    className="text-white/70 hover:text-resort-accent hover:translate-x-1 transition-all duration-200 inline-block"
                   >
                     {link.name}
                   </a>
@@ -142,7 +142,7 @@ export default function Footer() {
                 <li key={link.name}>
                   <a
                     href={link.href}
-                    className="text-white/70 hover:text-[#c9a962] hover:translate-x-1 transition-all duration-200 inline-block"
+                    className="text-white/70 hover:text-resort-accent hover:translate-x-1 transition-all duration-200 inline-block"
                   >
                     {link.name}
                   </a>
@@ -166,7 +166,7 @@ export default function Footer() {
                   className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/50"
                 />
               </div>
-              <Button className="bg-[#c9a962] hover:bg-[#d4b978] px-4">
+              <Button className="bg-resort-accent hover:bg-resort-accent-hover px-4 transition-colors duration-300">
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
@@ -182,7 +182,7 @@ export default function Footer() {
             <div className="flex items-center gap-6">
               <a
                 href="/admin"
-                className="text-white/50 hover:text-[#c9a962] text-sm transition-colors"
+                className="text-white/50 hover:text-resort-accent text-sm transition-colors"
               >
                 พนักงานเข้าสู่ระบบ
               </a>

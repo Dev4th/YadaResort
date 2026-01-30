@@ -88,9 +88,9 @@ export default function Hero() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
       </div>
 
-      {/* Gold Accent Lines */}
-      <div className="absolute top-20 left-10 w-32 h-px bg-gradient-to-r from-[#c9a962] to-transparent animate-pulse-slow" />
-      <div className="absolute bottom-40 left-20 w-20 h-px bg-gradient-to-r from-[#c9a962] to-transparent animate-pulse-slow" />
+      {/* Accent Lines */}
+      <div className="absolute top-20 left-10 w-32 h-px bg-gradient-to-r from-resort-accent to-transparent animate-pulse-slow" />
+      <div className="absolute bottom-40 left-20 w-20 h-px bg-gradient-to-r from-resort-accent to-transparent animate-pulse-slow" />
 
       {/* Content */}
       <div
@@ -104,7 +104,7 @@ export default function Hero() {
               <span className="inline-block">สัมผัสความสงบ</span>
             </span>
             <span className="hero-line2 block overflow-hidden">
-              <span className="inline-block text-[#c9a962]">
+              <span className="inline-block text-resort-accent">
                 ท่ามกลางธรรมชาติ
               </span>
             </span>
@@ -118,7 +118,7 @@ export default function Hero() {
 
           {/* Location Badge */}
           <div className="hero-subtitle flex items-center gap-2 text-white/80 mb-8">
-            <MapPin className="w-5 h-5 text-[#c9a962]" />
+            <MapPin className="w-5 h-5 text-resort-accent" />
             <span>80 ธงชัย ต.ธงชัย อ.เมือง จ.เพชรบุรี 76000</span>
           </div>
 
@@ -126,14 +126,14 @@ export default function Hero() {
           <div className="hero-buttons flex flex-wrap gap-4 mb-10">
             <Button
               onClick={() => scrollToSection('#rooms')}
-              className="btn-primary text-lg px-8 py-4"
+              className="bg-resort-primary text-white hover:bg-resort-primary-hover text-lg px-8 py-4 rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl"
             >
               จองห้องพัก
             </Button>
             <Button
               onClick={() => scrollToSection('#rooms')}
               variant="outline"
-              className="border-2 border-white text-white hover:bg-white hover:text-[#1a1a1a] text-lg px-8 py-4 bg-transparent"
+              className="border-2 border-white text-white hover:bg-white hover:text-resort-text text-lg px-8 py-4 bg-transparent rounded-lg font-medium transition-all duration-300"
             >
               ดูห้องพัก
             </Button>
@@ -146,7 +146,7 @@ export default function Hero() {
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
-                    className="w-5 h-5 fill-[#c9a962] text-[#c9a962]"
+                    className="w-5 h-5 fill-resort-accent text-resort-accent"
                   />
                 ))}
               </div>
@@ -154,7 +154,7 @@ export default function Hero() {
               <span className="text-white/70">(128 รีวิว)</span>
             </div>
             <div className="flex gap-3">
-              <span className="px-3 py-1 bg-[#c9a962]/20 text-[#c9a962] rounded-full text-sm">
+              <span className="px-3 py-1 bg-resort-accent/20 text-resort-accent rounded-full text-sm">
                 ที่พักยอดนิยม
               </span>
               <span className="px-3 py-1 bg-white/20 text-white rounded-full text-sm">

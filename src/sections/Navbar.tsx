@@ -52,14 +52,14 @@ export default function Navbar() {
           >
             <span
               className={`text-2xl font-bold font-serif transition-colors duration-300 ${
-                isScrolled ? 'text-[#1a1a1a]' : 'text-white'
+                isScrolled ? 'text-resort-text' : 'text-white'
               }`}
             >
               Yada Homestay
             </span>
             <span
               className={`text-sm transition-colors duration-300 ${
-                isScrolled ? 'text-[#c9a962]' : 'text-white/80'
+                isScrolled ? 'text-resort-accent' : 'text-white/80'
               }`}
             >
               | ญาดาโฮมสเตย์
@@ -76,10 +76,10 @@ export default function Navbar() {
                   e.preventDefault();
                   scrollToSection(link.href);
                 }}
-                className={`gold-underline text-sm font-medium transition-colors duration-200 ${
+                className={`accent-underline text-sm font-medium transition-colors duration-200 ${
                   isScrolled
-                    ? 'text-[#1a1a1a] hover:text-[#c9a962]'
-                    : 'text-white hover:text-[#c9a962]'
+                    ? 'text-resort-text hover:text-resort-primary'
+                    : 'text-white hover:text-resort-accent'
                 }`}
               >
                 {link.name}
@@ -92,7 +92,7 @@ export default function Navbar() {
             <a
               href="tel:081-234-5678"
               className={`flex items-center gap-2 text-sm font-medium transition-colors duration-200 ${
-                isScrolled ? 'text-[#1a1a1a]' : 'text-white'
+                isScrolled ? 'text-resort-text' : 'text-white'
               }`}
             >
               <Phone className="w-4 h-4" />
@@ -100,7 +100,7 @@ export default function Navbar() {
             </a>
             <Button
               onClick={() => scrollToSection('#rooms')}
-              className="btn-primary"
+              className="bg-resort-primary text-white hover:bg-resort-primary-hover px-6 py-2.5 rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md"
             >
               จองเลย
             </Button>
@@ -114,13 +114,13 @@ export default function Navbar() {
             {isMobileMenuOpen ? (
               <X
                 className={`w-6 h-6 ${
-                  isScrolled ? 'text-[#1a1a1a]' : 'text-white'
+                  isScrolled ? 'text-resort-text' : 'text-white'
                 }`}
               />
             ) : (
               <Menu
                 className={`w-6 h-6 ${
-                  isScrolled ? 'text-[#1a1a1a]' : 'text-white'
+                  isScrolled ? 'text-resort-text' : 'text-white'
                 }`}
               />
             )}
@@ -129,7 +129,7 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden mt-4 pb-4 bg-[#eaeae8] rounded-xl px-4">
+          <div className="lg:hidden mt-4 pb-4 bg-resort-cream rounded-xl px-4 shadow-lg">
             <div className="flex flex-col gap-4 pt-4">
               {navLinks.map((link) => (
                 <a
@@ -139,14 +139,14 @@ export default function Navbar() {
                     e.preventDefault();
                     scrollToSection(link.href);
                   }}
-                  className="text-base font-medium text-black hover:text-[#c9a962] transition-colors"
+                  className="text-base font-medium text-resort-text hover:text-resort-primary transition-colors"
                 >
                   {link.name}
                 </a>
               ))}
               <Button
                 onClick={() => scrollToSection('#rooms')}
-                className="btn-primary w-full mt-2"
+                className="bg-resort-primary text-white hover:bg-resort-primary-hover w-full mt-2 py-3 rounded-lg font-medium transition-all duration-300"
               >
                 จองเลย
               </Button>

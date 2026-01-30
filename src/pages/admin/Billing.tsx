@@ -46,7 +46,7 @@ export default function Billing() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[#1a1a1a]">การเงิน</h1>
+        <h1 className="text-2xl font-bold text-resort-text">การเงิน</h1>
         <p className="text-gray-500">จัดการการชำระเงินและออกใบเสร็จ</p>
       </div>
 
@@ -107,7 +107,7 @@ export default function Billing() {
                   <div className="flex items-center gap-6">
                     <div className="text-right">
                       <p className="text-sm text-gray-500">ยอดรวม</p>
-                      <p className="text-xl font-bold text-[#c9a962]">
+                      <p className="text-xl font-bold text-resort-accent">
                         ฿{grandTotal.toLocaleString()}
                       </p>
                     </div>
@@ -133,7 +133,7 @@ export default function Billing() {
                       </Button>
                       <Button
                         size="sm"
-                        className="bg-[#c9a962] hover:bg-[#d4b978]"
+                        className="bg-resort-primary hover:bg-resort-primary-hover"
                       >
                         <CreditCard className="w-4 h-4 mr-2" />
                         ชำระเงิน
@@ -228,7 +228,7 @@ export default function Billing() {
                 <div className="border-t pt-4">
                   <div className="flex justify-between text-lg font-bold">
                     <span>รวมทั้งสิ้น</span>
-                    <span className="text-[#c9a962]">
+                    <span className="text-resort-accent">
                       ฿{selectedBooking.grandTotal.toLocaleString()}
                     </span>
                   </div>
@@ -263,7 +263,7 @@ export default function Billing() {
                     พิมพ์
                   </Button>
                   {selectedBooking.payment_status !== 'paid' && (
-                    <Button className="flex-1 bg-[#c9a962] hover:bg-[#d4b978]">
+                    <Button className="flex-1 bg-resort-primary hover:bg-resort-primary-hover">
                       <CreditCard className="w-4 h-4 mr-2" />
                       ชำระเงิน
                     </Button>

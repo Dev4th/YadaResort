@@ -153,10 +153,10 @@ export default function Maintenance() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#1a1a1a]">ซ่อมบำรุง</h1>
+          <h1 className="text-2xl font-bold text-resort-text">ซ่อมบำรุง</h1>
           <p className="text-gray-500">จัดการงานซ่อมบำรุงห้องพักและอุปกรณ์</p>
         </div>
-        <Button onClick={() => setDialogOpen(true)} className="bg-[#c9a962] hover:bg-[#d4b978]">
+        <Button onClick={() => setDialogOpen(true)} className="bg-resort-primary hover:bg-resort-primary-hover">
           <Plus className="w-4 h-4 mr-2" />
           แจ้งซ่อมใหม่
         </Button>
@@ -400,7 +400,7 @@ export default function Maintenance() {
                 ยกเลิก
               </Button>
               <Button
-                className="flex-1 bg-[#c9a962] hover:bg-[#d4b978]"
+                className="flex-1 bg-resort-primary hover:bg-resort-primary-hover"
                 onClick={handleSubmit}
                 disabled={!formData.room_id || !formData.title || loading}
               >

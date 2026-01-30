@@ -242,10 +242,10 @@ export default function Bar() {
                 body { font-family: 'IBM Plex Sans Thai', sans-serif; padding: 20px; }
                 .receipt { max-width: 300px; margin: 0 auto; }
                 .header { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px dashed #ccc; }
-                .logo { font-size: 20px; font-weight: bold; color: #1a1a1a; }
-                .sub-logo { font-size: 12px; color: #c9a962; }
-                .info { font-size: 11px; color: #666; margin-top: 8px; line-height: 1.6; }
-                .receipt-no { margin: 15px 0; padding: 10px; background: #f5f5f5; border-radius: 8px; }
+                .logo { font-size: 20px; font-weight: bold; color: #1F2933; }
+                .sub-logo { font-size: 12px; color: #C2A97E; }
+                .info { font-size: 11px; color: #6B7280; margin-top: 8px; line-height: 1.6; }
+                .receipt-no { margin: 15px 0; padding: 10px; background: #FAF9F6; border-radius: 8px; }
                 .receipt-no p { font-size: 12px; }
                 .items { margin: 15px 0; }
                 .item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dotted #ddd; font-size: 13px; }
@@ -255,9 +255,9 @@ export default function Bar() {
                 .totals { margin-top: 15px; padding-top: 15px; border-top: 2px dashed #ccc; }
                 .total-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; }
                 .grand-total { font-size: 18px; font-weight: bold; border-top: 1px solid #333; padding-top: 10px; margin-top: 10px; }
-                .grand-total span:last-child { color: #c9a962; }
-                .footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 2px dashed #ccc; font-size: 11px; color: #666; }
-                .thank-you { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px; }
+                .grand-total span:last-child { color: #C2A97E; }
+                .footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 2px dashed #ccc; font-size: 11px; color: #6B7280; }
+                .thank-you { font-size: 14px; font-weight: 600; color: #1F2933; margin-bottom: 8px; }
               </style>
             </head>
             <body>
@@ -281,8 +281,8 @@ export default function Bar() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[#1e3a5f]">บาร์ / มินิบาร์</h1>
-        <p className="text-[#c9a962]">ขายเครื่องดื่มและของว่าง</p>
+        <h1 className="text-2xl font-bold text-resort-primary">บาร์ / มินิบาร์</h1>
+        <p className="text-resort-accent">ขายเครื่องดื่มและของว่าง</p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -306,7 +306,7 @@ export default function Bar() {
                 <TabsTrigger 
                   key={cat.id} 
                   value={cat.id} 
-                  className="px-4 py-2 rounded-full data-[state=active]:bg-[#1e3a5f] data-[state=active]:text-white bg-white border border-gray-200 text-gray-600"
+                  className="px-4 py-2 rounded-full data-[state=active]:bg-resort-primary data-[state=active]:text-white bg-white border border-gray-200 text-gray-600"
                 >
                   {cat.name}
                 </TabsTrigger>
@@ -326,7 +326,7 @@ export default function Bar() {
                 >
                   {/* Cart Quantity Badge */}
                   {cartQty > 0 && (
-                    <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[#1e3a5f] text-white text-xs font-bold flex items-center justify-center z-10">
+                    <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-resort-primary text-white text-xs font-bold flex items-center justify-center z-10">
                       {cartQty}
                     </div>
                   )}
@@ -334,10 +334,10 @@ export default function Bar() {
                     <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center mb-3">
                       <ShoppingCart className="w-5 h-5 text-gray-400" />
                     </div>
-                    <h3 className="font-medium text-[#1e3a5f]">{product.name_th}</h3>
+                    <h3 className="font-medium text-resort-primary">{product.name_th}</h3>
                     <p className="text-xs text-gray-400">P{String(index + 1).padStart(3, '0')}</p>
                     <div className="flex items-center justify-between mt-3">
-                      <span className="font-bold text-[#1e3a5f] text-lg">
+                      <span className="font-bold text-resort-primary text-lg">
                         ฿{product.price}
                       </span>
                       <span className="text-xs text-gray-400">
@@ -425,7 +425,7 @@ export default function Bar() {
                 </div>
                 <div className="flex justify-between text-lg font-bold">
                   <span>รวมทั้งสิ้น</span>
-                  <span className="text-[#c9a962]">฿{total.toFixed(2)}</span>
+                  <span className="text-resort-accent">฿{total.toFixed(2)}</span>
                 </div>
                 <Button
                   className="w-full btn-primary mt-4"
@@ -457,7 +457,7 @@ export default function Bar() {
               </div>
               <div className="flex justify-between text-xl font-bold pt-2 border-t">
                 <span>รวมทั้งสิ้น</span>
-                <span className="text-[#c9a962]">฿{total.toFixed(2)}</span>
+                <span className="text-resort-accent">฿{total.toFixed(2)}</span>
               </div>
             </div>
 
@@ -472,7 +472,7 @@ export default function Bar() {
                       onClick={() => setSelectedPayment(method.id)}
                       className={`p-3 rounded-lg border-2 transition-colors ${
                         selectedPayment === method.id
-                          ? 'border-[#c9a962] bg-[#c9a962]/10'
+                          ? 'border-resort-accent bg-resort-accent/10'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
@@ -493,7 +493,7 @@ export default function Bar() {
                 ยกเลิก
               </Button>
               <Button
-                className="flex-1 bg-[#c9a962] hover:bg-[#d4b978]"
+                className="flex-1 bg-resort-primary hover:bg-resort-primary-hover"
                 onClick={handleCheckout}
               >
                 {selectedPayment === 'transfer' || selectedPayment === 'promptpay' 
@@ -512,12 +512,12 @@ export default function Bar() {
             <DialogTitle className="flex items-center gap-2">
               {selectedPayment === 'promptpay' ? (
                 <>
-                  <QrCode className="w-5 h-5 text-[#c9a962]" />
+                  <QrCode className="w-5 h-5 text-resort-accent" />
                   ชำระผ่าน PromptPay
                 </>
               ) : (
                 <>
-                  <Building className="w-5 h-5 text-[#c9a962]" />
+                  <Building className="w-5 h-5 text-resort-accent" />
                   โอนเงินผ่านธนาคาร
                 </>
               )}
@@ -525,9 +525,9 @@ export default function Bar() {
           </DialogHeader>
           <div className="space-y-4">
             {/* Amount */}
-            <div className="p-4 bg-[#c9a962]/10 rounded-lg text-center">
+            <div className="p-4 bg-resort-accent/10 rounded-lg text-center">
               <p className="text-sm text-gray-500">ยอดที่ต้องชำระ</p>
-              <p className="text-3xl font-bold text-[#c9a962]">฿{total.toFixed(2)}</p>
+              <p className="text-3xl font-bold text-resort-accent">฿{total.toFixed(2)}</p>
             </div>
 
             {/* PromptPay Info */}
@@ -536,7 +536,7 @@ export default function Bar() {
                 {/* Timer แสดงเวลาที่เหลือ */}
                 {qrCodeDataUrl && qrTimeLeft > 0 && (
                   <div className={`flex items-center justify-center gap-2 p-2 rounded-lg ${
-                    qrTimeLeft <= 60 ? 'bg-red-100 text-red-600' : 'bg-[#c9a962]/10 text-[#c9a962]'
+                    qrTimeLeft <= 60 ? 'bg-red-100 text-red-600' : 'bg-resort-accent/10 text-resort-accent'
                   }`}>
                     <Clock className="w-4 h-4" />
                     <span className="font-medium">
@@ -546,10 +546,10 @@ export default function Bar() {
                 )}
 
                 {/* Generated QR Code */}
-                <div className="flex flex-col items-center justify-center p-4 bg-white rounded-lg border-2 border-dashed border-[#c9a962]">
+                <div className="flex flex-col items-center justify-center p-4 bg-white rounded-lg border-2 border-dashed border-resort-accent">
                   {qrLoading ? (
                     <div className="w-56 h-56 flex items-center justify-center">
-                      <Loader2 className="w-8 h-8 animate-spin text-[#c9a962]" />
+                      <Loader2 className="w-8 h-8 animate-spin text-resort-accent" />
                     </div>
                   ) : qrCodeDataUrl && qrTimeLeft > 0 ? (
                     <>
@@ -569,7 +569,7 @@ export default function Bar() {
                       <Button
                         onClick={generateNewQR}
                         disabled={qrLoading}
-                        className="bg-[#c9a962] hover:bg-[#d4b978]"
+                        className="bg-resort-primary hover:bg-resort-primary-hover"
                       >
                         <RefreshCw className="w-4 h-4 mr-2" />
                         สร้าง QR ใหม่
@@ -590,7 +590,7 @@ export default function Bar() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">จำนวนเงิน</span>
-                    <span className="font-bold text-[#c9a962]">฿{total.toFixed(2)}</span>
+                    <span className="font-bold text-resort-accent">฿{total.toFixed(2)}</span>
                   </div>
                 </div>
                 
@@ -647,10 +647,10 @@ export default function Bar() {
                 </div>
 
                 {/* Amount to Transfer */}
-                <div className="p-4 bg-[#c9a962]/10 rounded-lg border-2 border-[#c9a962]">
+                <div className="p-4 bg-resort-accent/10 rounded-lg border-2 border-resort-accent">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">ยอดที่ต้องโอน</span>
-                    <span className="text-2xl font-bold text-[#c9a962]">฿{total.toFixed(2)}</span>
+                    <span className="text-2xl font-bold text-resort-accent">฿{total.toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -669,7 +669,7 @@ export default function Bar() {
                 ยกเลิก
               </Button>
               <Button
-                className="flex-1 bg-[#c9a962] hover:bg-[#d4b978]"
+                className="flex-1 bg-resort-primary hover:bg-resort-primary-hover"
                 onClick={processPayment}
               >
                 ยืนยันการชำระเงิน
@@ -684,7 +684,7 @@ export default function Bar() {
         <DialogContent className="max-w-md p-0 overflow-hidden">
           <div className="p-4 bg-white flex items-center justify-between border-b">
             <div className="flex items-center gap-2">
-              <Receipt className="w-5 h-5 text-[#c9a962]" />
+              <Receipt className="w-5 h-5 text-resort-accent" />
               <span className="font-semibold">ใบเสร็จรับเงิน</span>
             </div>
             <div className="flex items-center gap-2">
@@ -712,8 +712,8 @@ export default function Bar() {
               <div className="receipt">
                 {/* Header */}
                 <div className="header text-center mb-6 pb-4 border-b-2 border-dashed border-gray-300">
-                  <h2 className="logo text-xl font-bold text-[#1a1a1a]">{receiptData.hotelName}</h2>
-                  <p className="sub-logo text-sm text-[#c9a962] font-medium">{receiptData.hotelNameTh}</p>
+                  <h2 className="logo text-xl font-bold text-resort-text">{receiptData.hotelName}</h2>
+                  <p className="sub-logo text-sm text-resort-accent font-medium">{receiptData.hotelNameTh}</p>
                   <div className="info text-xs text-gray-500 mt-3 space-y-1">
                     <p>{receiptData.address}</p>
                     <p>โทร: {receiptData.phone}</p>
@@ -769,7 +769,7 @@ export default function Bar() {
                   </div>
                   <div className="grand-total flex justify-between text-lg font-bold pt-3 mt-2 border-t border-gray-300">
                     <span>รวมทั้งสิ้น</span>
-                    <span className="text-[#c9a962]">฿{receiptData.total.toFixed(2)}</span>
+                    <span className="text-resort-accent">฿{receiptData.total.toFixed(2)}</span>
                   </div>
                   <div className="total-row flex justify-between text-sm pt-2">
                     <span className="text-gray-500">ชำระโดย</span>
@@ -779,7 +779,7 @@ export default function Bar() {
 
                 {/* Footer */}
                 <div className="footer text-center mt-6 pt-4 border-t-2 border-dashed border-gray-300">
-                  <p className="thank-you text-base font-semibold text-[#1a1a1a] mb-2">ขอบคุณที่ใช้บริการ</p>
+                  <p className="thank-you text-base font-semibold text-resort-text mb-2">ขอบคุณที่ใช้บริการ</p>
                   <p className="text-xs text-gray-500">Thank you for your visit</p>
                   <p className="text-xs text-gray-400 mt-3">*** ใบเสร็จนี้ออกเป็นสำเนา ***</p>
                 </div>
