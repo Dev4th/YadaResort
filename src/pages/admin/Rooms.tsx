@@ -1,15 +1,24 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, LayoutGrid, List, Sparkles, Wrench, Bed } from 'lucide-react';
+import { Plus, Search, LayoutGrid, List, Sparkles, Wrench, Bed, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useRoomStore } from '@/stores/supabaseStore';
+import { supabase } from '@/lib/supabase';
 
 const statusDot: Record<string, string> = {
   available: 'bg-green-500',
@@ -32,6 +41,18 @@ export default function RoomsPage() {
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // Add room state
+  const [addRoomOpen, setAddRoomOpen] = useState(false);
+  const [addRoomLoading, setAddRoomLoading] = useState(false);
+  const [roomForm, setRoomForm] = useState({
+    name: '',
+    name_th: '',
+    description: '',
+    capacity: 2,
+    price: 0,
+    type: 'standard',
+  });
 
   useEffect(() => {
     fetchRooms();
@@ -47,6 +68,45 @@ export default function RoomsPage() {
   const handleStatusChange = async (roomId: string, newStatus: string) => {
     await updateRoomStatus(roomId, newStatus as any);
     setDetailOpen(false);
+  };
+
+  const handleAddRoom = async () => {
+    if (!roomForm.name || !roomForm.name_th || !roomForm.price) {
+      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      return;
+    }
+
+    setAddRoomLoading(true);
+    try {
+      const { error } = await supabase
+        .from('rooms')
+        .insert({
+          name: roomForm.name,
+          name_th: roomForm.name_th,
+          description: roomForm.description || null,
+          capacity: roomForm.capacity,
+          price: roomForm.price,
+          status: 'available',
+        });
+
+      if (error) throw error;
+
+      setAddRoomOpen(false);
+      setRoomForm({
+        name: '',
+        name_th: '',
+        description: '',
+        capacity: 2,
+        price: 0,
+        type: 'standard',
+      });
+      fetchRooms();
+    } catch (error) {
+      console.error('Error adding room:', error);
+      alert('เกิดข้อผิดพลาดในการเพิ่มห้องพัก');
+    } finally {
+      setAddRoomLoading(false);
+    }
   };
 
   // Stats
@@ -65,7 +125,7 @@ export default function RoomsPage() {
           <h1 className="text-2xl font-bold text-resort-text">จัดการห้องพัก</h1>
           <p className="text-gray-500">ดูและจัดการสถานะห้องพักทุกห้อง</p>
         </div>
-        <Button className="bg-resort-primary hover:bg-resort-primary-hover">
+        <Button className="bg-resort-primary hover:bg-resort-primary-hover" onClick={() => setAddRoomOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           เพิ่มห้องพัก
         </Button>
@@ -283,6 +343,112 @@ export default function RoomsPage() {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Room Dialog */}
+      <Dialog open={addRoomOpen} onOpenChange={setAddRoomOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>เพิ่มห้องพักใหม่</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div>
+              <Label>ชื่อห้อง (อังกฤษ) *</Label>
+              <Input
+                value={roomForm.name}
+                onChange={(e) => setRoomForm({ ...roomForm, name: e.target.value })}
+                placeholder="เช่น Room 101, Deluxe Suite"
+                className="mt-2"
+              />
+            </div>
+
+            <div>
+              <Label>ชื่อห้อง (ไทย) *</Label>
+              <Input
+                value={roomForm.name_th}
+                onChange={(e) => setRoomForm({ ...roomForm, name_th: e.target.value })}
+                placeholder="เช่น ห้องดีลักซ์"
+                className="mt-2"
+              />
+            </div>
+
+            <div>
+              <Label>ประเภทห้อง</Label>
+              <Select
+                value={roomForm.type}
+                onValueChange={(value) => setRoomForm({ ...roomForm, type: value })}
+              >
+                <SelectTrigger className="mt-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard">มาตรฐาน</SelectItem>
+                  <SelectItem value="deluxe">ดีลักซ์</SelectItem>
+                  <SelectItem value="family">แฟมิลี่</SelectItem>
+                  <SelectItem value="suite">สวีท</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>ความจุ (ท่าน) *</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={roomForm.capacity}
+                  onChange={(e) => setRoomForm({ ...roomForm, capacity: parseInt(e.target.value) || 1 })}
+                  className="mt-2"
+                />
+              </div>
+              <div>
+                <Label>ราคา/คืน (บาท) *</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={roomForm.price}
+                  onChange={(e) => setRoomForm({ ...roomForm, price: parseInt(e.target.value) || 0 })}
+                  className="mt-2"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>รายละเอียด</Label>
+              <Input
+                value={roomForm.description}
+                onChange={(e) => setRoomForm({ ...roomForm, description: e.target.value })}
+                placeholder="รายละเอียดห้องพัก..."
+                className="mt-2"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setAddRoomOpen(false)}
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                className="flex-1 bg-resort-primary hover:bg-resort-primary-hover"
+                onClick={handleAddRoom}
+                disabled={addRoomLoading || !roomForm.name || !roomForm.name_th || !roomForm.price}
+              >
+                {addRoomLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    กำลังบันทึก...
+                  </>
+                ) : (
+                  'เพิ่มห้องพัก'
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Save, UserPlus, Users, Shield, Bell, Mail, CreditCard, Building, QrCode, Plus, Trash2 } from 'lucide-react';
+import { Save, UserPlus, Users, Shield, Bell, Mail, CreditCard, Building, QrCode, Plus, Trash2, Loader2, Eye, EyeOff, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { supabase } from '@/lib/supabase';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
@@ -63,6 +66,134 @@ export default function Settings() {
     pushNewOrder: true,
     pushLowStock: true,
   });
+
+  // User management state
+  const [users, setUsers] = useState<{ id: string; name: string; email: string; role: string; username?: string }[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [addUserOpen, setAddUserOpen] = useState(false);
+  const [addUserLoading, setAddUserLoading] = useState(false);
+  const [addUserForm, setAddUserForm] = useState({
+    name: '',
+    email: '',
+    username: '',
+    role: 'staff',
+    password: '',
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  
+  const [editUserOpen, setEditUserOpen] = useState(false);
+  const [editUserLoading, setEditUserLoading] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<{ id: string; name: string; email: string; role: string; username?: string } | null>(null);
+  const [editUserForm, setEditUserForm] = useState({
+    name: '',
+    email: '',
+    role: 'staff',
+  });
+
+  // Fetch users from Supabase
+  const fetchUsers = async () => {
+    setUsersLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      setUsers(data || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // User management handlers
+  const handleAddUser = async () => {
+    if (!addUserForm.name || !addUserForm.email || !addUserForm.username) {
+      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      return;
+    }
+    
+    setAddUserLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .insert({
+          name: addUserForm.name,
+          email: addUserForm.email,
+          username: addUserForm.username,
+          role: addUserForm.role,
+          permissions: rolePermissions[addUserForm.role] || [],
+          is_active: true,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      await fetchUsers();
+      setAddUserOpen(false);
+      setAddUserForm({ name: '', email: '', username: '', role: 'staff', password: '' });
+      alert('เพิ่มผู้ใช้งานสำเร็จ');
+    } catch (error: any) {
+      console.error('Error adding user:', error);
+      if (error.code === '23505') {
+        alert('อีเมลหรือชื่อผู้ใช้ซ้ำในระบบ');
+      } else {
+        alert('เกิดข้อผิดพลาดในการเพิ่มผู้ใช้งาน');
+      }
+    } finally {
+      setAddUserLoading(false);
+    }
+  };
+
+  const handleEditUser = (user: { id: string; name: string; email: string; role: string }) => {
+    setSelectedUser(user);
+    setEditUserForm({
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
+    setEditUserOpen(true);
+  };
+
+  const handleSaveUser = async () => {
+    if (!selectedUser) return;
+    if (!editUserForm.name || !editUserForm.email) {
+      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      return;
+    }
+    
+    setEditUserLoading(true);
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          name: editUserForm.name,
+          email: editUserForm.email,
+          role: editUserForm.role,
+          permissions: rolePermissions[editUserForm.role] || [],
+        })
+        .eq('id', selectedUser.id);
+      
+      if (error) throw error;
+      
+      await fetchUsers();
+      setEditUserOpen(false);
+      setSelectedUser(null);
+      alert('บันทึกข้อมูลผู้ใช้งานสำเร็จ');
+    } catch (error) {
+      console.error('Error updating user:', error);
+      alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+    } finally {
+      setEditUserLoading(false);
+    }
+  };
 
   // Bank account management
   const addBankAccount = () => {
@@ -445,17 +576,16 @@ export default function Settings() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>ผู้ใช้งานระบบ</CardTitle>
-              <Button size="sm" className="bg-resort-primary hover:bg-resort-primary-hover">
+              <Button size="sm" className="bg-resort-primary hover:bg-resort-primary-hover" onClick={() => setAddUserOpen(true)}>
                 <UserPlus className="w-4 h-4 mr-2" />
                 เพิ่มผู้ใช้
               </Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {['เจ้าของรีสอร์ท', 'ผู้ดูแลระบบ', 'พนักงานต้อนรับ', 'พนักงานทั่วไป'].map(
-                  (name, index) => (
+                {users.map((user) => (
                     <div
-                      key={index}
+                      key={user.id}
                       className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                     >
                       <div className="flex items-center gap-4">
@@ -463,42 +593,37 @@ export default function Settings() {
                           <Users className="w-5 h-5 text-resort-accent" />
                         </div>
                         <div>
-                          <p className="font-medium">{name}</p>
+                          <p className="font-medium">{user.name}</p>
                           <p className="text-sm text-gray-500">
-                            {
-                              ['owner', 'admin', 'receptionist', 'staff'][
-                                index
-                              ]
-                            }
-                            @yadahomestay.com
+                            {user.email}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            index === 0
+                            user.role === 'owner'
                               ? 'bg-purple-100 text-purple-700'
-                              : index === 1
+                              : user.role === 'admin'
                               ? 'bg-blue-100 text-blue-700'
                               : 'bg-gray-100 text-gray-700'
                           }`}
                         >
-                          {index === 0
+                          {user.role === 'owner'
                             ? 'เจ้าของ'
-                            : index === 1
+                            : user.role === 'admin'
                             ? 'แอดมิน'
-                            : index === 2
+                            : user.role === 'receptionist'
                             ? 'ต้อนรับ'
                             : 'พนักงาน'}
                         </span>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={() => handleEditUser(user)}>
+                          <Edit className="w-4 h-4 mr-1" />
                           แก้ไข
                         </Button>
                       </div>
                     </div>
-                  )
-                )}
+                  ))}
               </div>
             </CardContent>
           </Card>
@@ -636,6 +761,156 @@ export default function Settings() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Add User Dialog */}
+      <Dialog open={addUserOpen} onOpenChange={setAddUserOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>เพิ่มผู้ใช้งานใหม่</DialogTitle>
+            <DialogDescription>
+              กรอกข้อมูลเพื่อเพิ่มผู้ใช้งานระบบใหม่
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="userName">ชื่อ-นามสกุล</Label>
+              <Input
+                id="userName"
+                placeholder="กรอกชื่อ-นามสกุล"
+                value={addUserForm.name}
+                onChange={(e) => setAddUserForm({ ...addUserForm, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="userUsername">ชื่อผู้ใช้งาน (Username)</Label>
+              <Input
+                id="userUsername"
+                placeholder="กรอกชื่อผู้ใช้งาน"
+                value={addUserForm.username}
+                onChange={(e) => setAddUserForm({ ...addUserForm, username: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="userEmail">อีเมล</Label>
+              <Input
+                id="userEmail"
+                type="email"
+                placeholder="example@email.com"
+                value={addUserForm.email}
+                onChange={(e) => setAddUserForm({ ...addUserForm, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="userRole">บทบาท</Label>
+              <Select value={addUserForm.role} onValueChange={(value) => setAddUserForm({ ...addUserForm, role: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="เลือกบทบาท" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="owner">เจ้าของ</SelectItem>
+                  <SelectItem value="admin">ผู้ดูแลระบบ</SelectItem>
+                  <SelectItem value="receptionist">พนักงานต้อนรับ</SelectItem>
+                  <SelectItem value="staff">พนักงานทั่วไป</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="userPassword">รหัสผ่าน</Label>
+              <div className="relative">
+                <Input
+                  id="userPassword"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="กรอกรหัสผ่าน"
+                  value={addUserForm.password}
+                  onChange={(e) => setAddUserForm({ ...addUserForm, password: e.target.value })}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddUserOpen(false)}>
+              ยกเลิก
+            </Button>
+            <Button 
+              className="bg-resort-primary hover:bg-resort-primary-hover"
+              onClick={handleAddUser}
+              disabled={addUserLoading}
+            >
+              {addUserLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              เพิ่มผู้ใช้
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={editUserOpen} onOpenChange={setEditUserOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>แก้ไขข้อมูลผู้ใช้งาน</DialogTitle>
+            <DialogDescription>
+              แก้ไขข้อมูลผู้ใช้งานระบบ
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="editUserName">ชื่อ-นามสกุล</Label>
+              <Input
+                id="editUserName"
+                placeholder="กรอกชื่อ-นามสกุล"
+                value={editUserForm.name}
+                onChange={(e) => setEditUserForm({ ...editUserForm, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editUserEmail">อีเมล</Label>
+              <Input
+                id="editUserEmail"
+                type="email"
+                placeholder="example@email.com"
+                value={editUserForm.email}
+                onChange={(e) => setEditUserForm({ ...editUserForm, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editUserRole">บทบาท</Label>
+              <Select value={editUserForm.role} onValueChange={(value) => setEditUserForm({ ...editUserForm, role: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="เลือกบทบาท" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="owner">เจ้าของ</SelectItem>
+                  <SelectItem value="admin">ผู้ดูแลระบบ</SelectItem>
+                  <SelectItem value="receptionist">พนักงานต้อนรับ</SelectItem>
+                  <SelectItem value="staff">พนักงานทั่วไป</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditUserOpen(false)}>
+              ยกเลิก
+            </Button>
+            <Button 
+              className="bg-resort-primary hover:bg-resort-primary-hover"
+              onClick={handleSaveUser}
+              disabled={editUserLoading}
+            >
+              {editUserLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              บันทึก
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

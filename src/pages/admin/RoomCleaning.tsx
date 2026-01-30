@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, Check, Clock, AlertCircle, User, Calendar, Play, CheckCircle, Trash2 } from 'lucide-react';
+import { Sparkles, Check, Clock, AlertCircle, User, Calendar, CheckCircle, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -12,76 +12,123 @@ import {
 import { useRoomStore } from '@/stores/supabaseStore';
 import { supabase } from '@/lib/supabase';
 
-const cleaningStaff = [
-  { id: 'staff1', name: 'สมศรี' },
-  { id: 'staff2', name: 'ประเสริฐ' },
-  { id: 'staff3', name: 'มานี' },
-];
-
-// Local state type for cleaning tasks
+// Cleaning task type from database
 interface CleaningTask {
   id: string;
   room_id: string;
-  room_name: string;
-  room_name_en: string;
   status: 'pending' | 'in_progress' | 'completed' | 'inspected';
-  assigned_to: string;
-  started_at?: string;
-  completed_at?: string;
+  assigned_to: string | null;
+  notes: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  room?: {
+    name: string;
+    name_th: string;
+  };
+  assigned_user?: {
+    name: string;
+  };
 }
 
 export default function RoomCleaning() {
   const { rooms, fetchRooms, updateRoomStatus } = useRoomStore();
   const [cleaningTasks, setCleaningTasks] = useState<CleaningTask[]>([]);
+  const [cleaningStaff, setCleaningStaff] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchRooms();
-    loadTasksFromStorage();
+    fetchCleaningTasks();
+    fetchStaff();
   }, []);
 
-  // Load tasks from localStorage
-  const loadTasksFromStorage = () => {
-    const saved = localStorage.getItem('cleaningTasks');
-    if (saved) {
-      setCleaningTasks(JSON.parse(saved));
+  // Fetch cleaning tasks from Supabase
+  const fetchCleaningTasks = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('room_cleaning')
+        .select(`
+          *,
+          room:rooms(name, name_th),
+          assigned_user:users!room_cleaning_assigned_to_fkey(name)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setCleaningTasks(data || []);
+    } catch (error) {
+      console.error('Error fetching cleaning tasks:', error);
     }
   };
 
-  // Save tasks to localStorage
-  const saveTasks = (tasks: CleaningTask[]) => {
-    localStorage.setItem('cleaningTasks', JSON.stringify(tasks));
-    setCleaningTasks(tasks);
+  // Fetch staff from users table
+  const fetchStaff = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, name')
+        .in('role', ['staff', 'receptionist', 'admin', 'owner'])
+        .eq('is_active', true);
+      
+      if (error) throw error;
+      setCleaningStaff(data || []);
+    } catch (error) {
+      console.error('Error fetching staff:', error);
+      // Fallback to default staff if fetch fails
+      setCleaningStaff([
+        { id: 'staff1', name: 'สมศรี' },
+        { id: 'staff2', name: 'ประเสริฐ' },
+        { id: 'staff3', name: 'มานี' },
+      ]);
+    }
   };
 
   const roomsNeedingCleaning = rooms.filter(r => r.status === 'cleaning');
 
   // มอบหมายงาน
-  const assignTask = (room: any, staffId: string) => {
-    const newTask: CleaningTask = {
-      id: `task-${Date.now()}`,
-      room_id: room.id,
-      room_name: room.name_th,
-      room_name_en: room.name,
-      status: 'in_progress',
-      assigned_to: staffId,
-      started_at: new Date().toISOString(),
-    };
-    
-    const updatedTasks = [...cleaningTasks, newTask];
-    saveTasks(updatedTasks);
+  const assignTask = async (room: any, staffId: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('room_cleaning')
+        .insert({
+          room_id: room.id,
+          status: 'in_progress',
+          assigned_to: staffId,
+          started_at: new Date().toISOString(),
+        });
+      
+      if (error) throw error;
+      await fetchCleaningTasks();
+    } catch (error) {
+      console.error('Error assigning task:', error);
+      alert('เกิดข้อผิดพลาดในการมอบหมายงาน');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // เสร็จสิ้นการทำความสะอาด
   const completeCleaning = async (taskId: string) => {
     setLoading(true);
-    const updatedTasks = cleaningTasks.map(task => 
-      task.id === taskId 
-        ? { ...task, status: 'completed' as const, completed_at: new Date().toISOString() }
-        : task
-    );
-    saveTasks(updatedTasks);
-    setLoading(false);
+    try {
+      const { error } = await supabase
+        .from('room_cleaning')
+        .update({
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+        })
+        .eq('id', taskId);
+      
+      if (error) throw error;
+      await fetchCleaningTasks();
+    } catch (error) {
+      console.error('Error completing task:', error);
+      alert('เกิดข้อผิดพลาด');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ตรวจสอบห้อง
@@ -90,30 +137,59 @@ export default function RoomCleaning() {
     const task = cleaningTasks.find(t => t.id === taskId);
     
     if (task) {
-      // อัพเดทสถานะห้องเป็น available
-      await updateRoomStatus(task.room_id, 'available');
-      
-      const updatedTasks = cleaningTasks.map(t => 
-        t.id === taskId 
-          ? { ...t, status: 'inspected' as const }
-          : t
-      );
-      saveTasks(updatedTasks);
-      await fetchRooms();
+      try {
+        // Update cleaning task status
+        const { error: taskError } = await supabase
+          .from('room_cleaning')
+          .update({ status: 'inspected' })
+          .eq('id', taskId);
+        
+        if (taskError) throw taskError;
+        
+        // Update room status to available
+        await updateRoomStatus(task.room_id, 'available');
+        
+        await fetchCleaningTasks();
+        await fetchRooms();
+      } catch (error) {
+        console.error('Error inspecting room:', error);
+        alert('เกิดข้อผิดพลาด');
+      }
     }
     setLoading(false);
   };
 
   // ลบงานที่เสร็จแล้ว
-  const clearCompletedTasks = () => {
-    const activeTasks = cleaningTasks.filter(t => t.status !== 'inspected');
-    saveTasks(activeTasks);
+  const clearCompletedTasks = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('room_cleaning')
+        .delete()
+        .eq('status', 'inspected');
+      
+      if (error) throw error;
+      await fetchCleaningTasks();
+    } catch (error) {
+      console.error('Error clearing tasks:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ลบงานเดี่ยว
-  const deleteTask = (taskId: string) => {
-    const updatedTasks = cleaningTasks.filter(t => t.id !== taskId);
-    saveTasks(updatedTasks);
+  const deleteTask = async (taskId: string) => {
+    try {
+      const { error } = await supabase
+        .from('room_cleaning')
+        .delete()
+        .eq('id', taskId);
+      
+      if (error) throw error;
+      await fetchCleaningTasks();
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -268,11 +344,11 @@ export default function RoomCleaning() {
                     <Sparkles className="w-5 h-5 text-resort-accent" />
                   </div>
                   <div>
-                    <p className="font-medium">{task.room_name}</p>
+                    <p className="font-medium">{task.room?.name_th || 'ไม่ระบุห้อง'}</p>
                     <div className="flex items-center gap-3 text-sm text-gray-500">
                       <span className="flex items-center gap-1">
                         <User className="w-3 h-3" />
-                        {cleaningStaff.find(s => s.id === task.assigned_to)?.name || 'ไม่ระบุ'}
+                        {task.assigned_user?.name || cleaningStaff.find(s => s.id === task.assigned_to)?.name || 'ไม่ระบุ'}
                       </span>
                       {task.started_at && (
                         <span className="flex items-center gap-1">

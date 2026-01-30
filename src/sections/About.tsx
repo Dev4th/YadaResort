@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Check, Heart, Home, Leaf, Users } from 'lucide-react';
+import { useRoomStore, useBookingStore } from '@/stores/supabaseStore';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -16,6 +17,29 @@ export default function About() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  
+  // Fetch real data from stores
+  const { rooms, fetchRooms } = useRoomStore();
+  const { bookings, fetchBookings } = useBookingStore();
+  const [stats, setStats] = useState({ rooms: 0, customers: 0, rating: 4.8 });
+
+  useEffect(() => {
+    fetchRooms();
+    fetchBookings();
+  }, [fetchRooms, fetchBookings]);
+
+  useEffect(() => {
+    // Calculate real stats from data
+    const roomCount = rooms.length;
+    // Count unique customers from bookings
+    const uniqueCustomers = new Set(bookings.map(b => b.guest_phone)).size;
+    
+    setStats({
+      rooms: roomCount || 12,
+      customers: uniqueCustomers > 0 ? uniqueCustomers : 500,
+      rating: 4.8, // Could be fetched from a reviews table in the future
+    });
+  }, [rooms, bookings]);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -180,15 +204,15 @@ export default function About() {
             {/* Stats */}
             <div className="grid grid-cols-3 gap-6 pt-8 border-t border-gray-200">
               <div className="text-center">
-                <span className="text-3xl font-bold text-resort-primary">12</span>
+                <span className="text-3xl font-bold text-resort-primary">{stats.rooms}</span>
                 <p className="text-sm text-resort-text-secondary mt-1">ห้องพัก</p>
               </div>
               <div className="text-center">
-                <span className="text-3xl font-bold text-resort-primary">500+</span>
+                <span className="text-3xl font-bold text-resort-primary">{stats.customers}+</span>
                 <p className="text-sm text-resort-text-secondary mt-1">ลูกค้าพึงพอใจ</p>
               </div>
               <div className="text-center">
-                <span className="text-3xl font-bold text-resort-primary">4.8</span>
+                <span className="text-3xl font-bold text-resort-primary">{stats.rating}</span>
                 <p className="text-sm text-resort-text-secondary mt-1">คะแนนรีวิว</p>
               </div>
             </div>

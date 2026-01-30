@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { MapPin, Phone, Mail, Clock, Facebook, Instagram, MessageCircle } from 'lucide-react';
+import { useSettingsStore } from '@/stores/supabaseStore';
 
 // Static nearby attractions
 const nearbyAttractions = [
@@ -31,6 +32,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 export default function Contact() {
   const sectionRef = useRef<HTMLDivElement>(null);
+  const { settings } = useSettingsStore();
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -103,23 +105,24 @@ export default function Contact() {
     return () => ctx.revert();
   }, []);
 
+  // Use settings from store with fallbacks
   const contactInfo = [
     {
       icon: MapPin,
       title: 'ที่อยู่',
-      content: '80 ธงชัย ต.ธงชัย อ.เมือง จ.เพชรบุรี 76000',
+      content: settings.address || '80 ธงชัย ต.ธงชัย อ.เมือง จ.เพชรบุรี 76000',
     },
     {
       icon: Phone,
       title: 'โทรศัพท์',
-      content: '081-234-5678',
-      href: 'tel:081-234-5678',
+      content: settings.phone || '081-234-5678',
+      href: `tel:${settings.phone || '081-234-5678'}`,
     },
     {
       icon: Mail,
       title: 'อีเมล',
-      content: 'info@yadahomestay.com',
-      href: 'mailto:info@yadahomestay.com',
+      content: settings.email || 'info@yadahomestay.com',
+      href: `mailto:${settings.email || 'info@yadahomestay.com'}`,
     },
     {
       icon: Clock,

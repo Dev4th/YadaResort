@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Calendar, TrendingUp, Users, Bed, Coffee, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,7 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useBookingStore, useRoomStore, useOrderStore, useDashboardStore } from '@/stores/supabaseStore';
+import { useBookingStore, useRoomStore, useOrderStore, useDashboardStore, useProductStore } from '@/stores/supabaseStore';
+import { supabase } from '@/lib/supabase';
 import {
   BarChart,
   Bar,
@@ -25,6 +26,8 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import { format, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, subDays } from 'date-fns';
+import { th } from 'date-fns/locale';
 
 const COLORS = ['#2F5D50', '#4ade80', '#60a5fa', '#f87171', '#a78bfa'];
 
@@ -32,50 +35,134 @@ export default function Reports() {
   const { bookings, fetchBookings } = useBookingStore();
   const { rooms, fetchRooms } = useRoomStore();
   const { orders, fetchOrders } = useOrderStore();
+  const { products, fetchProducts } = useProductStore();
   const { stats, fetchStats } = useDashboardStore();
   const [period, setPeriod] = useState('month');
+  const [revenueData, setRevenueData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchBookings();
-    fetchRooms();
-    fetchOrders();
-    fetchStats();
-  }, [fetchBookings, fetchRooms, fetchOrders, fetchStats]);
+    const loadData = async () => {
+      setLoading(true);
+      await Promise.all([
+        fetchBookings(),
+        fetchRooms(),
+        fetchOrders(),
+        fetchProducts(),
+        fetchStats(),
+      ]);
+      await fetchRevenueData();
+      setLoading(false);
+    };
+    loadData();
+  }, [fetchBookings, fetchRooms, fetchOrders, fetchProducts, fetchStats]);
 
-  // Mock data for charts
-  const revenueData = [
-    { name: 'ม.ค.', room: 120000, fnb: 25000 },
-    { name: 'ก.พ.', room: 135000, fnb: 30000 },
-    { name: 'มี.ค.', room: 150000, fnb: 35000 },
-    { name: 'เม.ย.', room: 140000, fnb: 28000 },
-    { name: 'พ.ค.', room: 160000, fnb: 40000 },
-    { name: 'มิ.ย.', room: 180000, fnb: 45000 },
-  ];
+  // Fetch revenue data from payments
+  const fetchRevenueData = async () => {
+    const monthlyData: any[] = [];
+    const now = new Date();
+    
+    for (let i = 5; i >= 0; i--) {
+      const monthDate = subMonths(now, i);
+      const monthStart = startOfMonth(monthDate);
+      const monthEnd = endOfMonth(monthDate);
+      
+      // Get room revenue from bookings
+      const { data: roomPayments } = await supabase
+        .from('payments')
+        .select('amount, booking_id')
+        .gte('created_at', monthStart.toISOString())
+        .lte('created_at', monthEnd.toISOString())
+        .eq('status', 'completed')
+        .not('booking_id', 'is', null);
+      
+      // Get F&B revenue from orders
+      const { data: fnbPayments } = await supabase
+        .from('payments')
+        .select('amount, order_id')
+        .gte('created_at', monthStart.toISOString())
+        .lte('created_at', monthEnd.toISOString())
+        .eq('status', 'completed')
+        .not('order_id', 'is', null);
+      
+      const roomRevenue = roomPayments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+      const fnbRevenue = fnbPayments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+      
+      monthlyData.push({
+        name: format(monthDate, 'MMM', { locale: th }),
+        room: roomRevenue,
+        fnb: fnbRevenue,
+      });
+    }
+    
+    setRevenueData(monthlyData);
+  };
 
-  const occupancyData = [
-    { name: 'อา.', rate: 65 },
-    { name: 'จ.', rate: 45 },
-    { name: 'อ.', rate: 55 },
-    { name: 'พ.', rate: 70 },
-    { name: 'พฤ.', rate: 75 },
-    { name: 'ศ.', rate: 85 },
-    { name: 'ส.', rate: 90 },
-  ];
+  // Calculate occupancy data from bookings (last 7 days)
+  const occupancyData = useMemo(() => {
+    const now = new Date();
+    const weekStart = startOfWeek(subDays(now, 7), { weekStartsOn: 0 });
+    const weekEnd = endOfWeek(now, { weekStartsOn: 0 });
+    const days = eachDayOfInterval({ start: weekStart, end: weekEnd }).slice(0, 7);
+    const totalRooms = rooms.length || 1;
+    
+    return days.map(day => {
+      const dayStr = format(day, 'yyyy-MM-dd');
+      const occupiedCount = bookings.filter(b => {
+        const checkIn = new Date(b.check_in);
+        const checkOut = new Date(b.check_out);
+        const checkDay = new Date(dayStr);
+        return checkIn <= checkDay && checkOut > checkDay && 
+               (b.status === 'confirmed' || b.status === 'checked-in');
+      }).length;
+      
+      return {
+        name: format(day, 'E', { locale: th }),
+        rate: Math.round((occupiedCount / totalRooms) * 100),
+      };
+    });
+  }, [bookings, rooms]);
 
-  const roomTypeData = [
-    { name: 'ห้องมาตรฐาน', value: 45 },
-    { name: 'ห้องดีลักซ์', value: 30 },
-    { name: 'ห้องแฟมิลี่', value: 15 },
-    { name: 'ห้องวิลล่า', value: 10 },
-  ];
+  // Calculate room type distribution from actual bookings
+  const roomTypeData = useMemo(() => {
+    const roomBookings: Record<string, number> = {};
+    
+    bookings.forEach(booking => {
+      const room = rooms.find(r => r.id === booking.room_id);
+      if (room) {
+        const roomType = room.name?.toLowerCase().includes('deluxe') ? 'ห้องดีลักซ์' :
+                        room.name?.toLowerCase().includes('family') || room.name?.toLowerCase().includes('suite') ? 'ห้องแฟมิลี่' :
+                        room.name?.toLowerCase().includes('villa') ? 'ห้องวิลล่า' : 'ห้องมาตรฐาน';
+        roomBookings[roomType] = (roomBookings[roomType] || 0) + 1;
+      }
+    });
+    
+    return Object.entries(roomBookings).map(([name, value]) => ({ name, value }));
+  }, [bookings, rooms]);
 
-  const topProducts = [
-    { name: 'ชาเย็น', sales: 150, revenue: 9000 },
-    { name: 'น้ำมะพร้าว', sales: 120, revenue: 6000 },
-    { name: 'เบียร์สิงห์', sales: 80, revenue: 9600 },
-    { name: 'ลาเต้', sales: 75, revenue: 6375 },
-    { name: 'เอสเพรสโซ่', sales: 60, revenue: 4200 },
-  ];
+  // Calculate top products from orders
+  const topProducts = useMemo(() => {
+    const productSales: Record<string, { name: string; sales: number; revenue: number }> = {};
+    
+    orders.forEach(order => {
+      if (order.items && Array.isArray(order.items)) {
+        order.items.forEach((item: any) => {
+          const product = products.find(p => p.id === item.product_id);
+          if (product) {
+            if (!productSales[product.id]) {
+              productSales[product.id] = { name: product.name_th || product.name, sales: 0, revenue: 0 };
+            }
+            productSales[product.id].sales += item.quantity || 0;
+            productSales[product.id].revenue += (item.quantity || 0) * (product.price || 0);
+          }
+        });
+      }
+    });
+    
+    return Object.values(productSales)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
+  }, [orders, products]);
 
   return (
     <div className="space-y-6">

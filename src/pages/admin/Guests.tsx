@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Search, User, Phone, Mail, History, Eye } from 'lucide-react';
+import { Search, User, Phone, Mail, History, Eye, Edit, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useBookingStore } from '@/stores/supabaseStore';
+import { supabase } from '@/lib/supabase';
 
 // Mock guests data derived from bookings
 export default function Guests() {
@@ -17,6 +19,15 @@ export default function Guests() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGuest, setSelectedGuest] = useState<any>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  
+  // Edit guest state
+  const [editOpen, setEditOpen] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    phone: '',
+    email: '',
+  });
 
   useEffect(() => {
     fetchBookings();
@@ -51,6 +62,46 @@ export default function Guests() {
       guest.phone.includes(searchQuery) ||
       guest.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleEditGuest = (guest: any) => {
+    setEditForm({
+      name: guest.name,
+      phone: guest.phone,
+      email: guest.email || '',
+    });
+    setSelectedGuest(guest);
+    setEditOpen(true);
+  };
+
+  const handleSaveGuest = async () => {
+    if (!editForm.name || !editForm.phone) {
+      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      return;
+    }
+
+    setEditLoading(true);
+    try {
+      // Update all bookings with this phone number
+      const { error } = await supabase
+        .from('bookings')
+        .update({
+          guest_name: editForm.name,
+          guest_phone: editForm.phone,
+          guest_email: editForm.email || null,
+        })
+        .eq('guest_phone', selectedGuest.phone);
+
+      if (error) throw error;
+
+      setEditOpen(false);
+      fetchBookings();
+    } catch (error) {
+      console.error('Error updating guest:', error);
+      alert('เกิดข้อผิดพลาดในการแก้ไขข้อมูลลูกค้า');
+    } finally {
+      setEditLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -146,7 +197,17 @@ export default function Guests() {
           {selectedGuest && (
             <>
               <DialogHeader>
-                <DialogTitle>ประวัติลูกค้า</DialogTitle>
+                <div className="flex items-center justify-between">
+                  <DialogTitle>ประวัติลูกค้า</DialogTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEditGuest(selectedGuest)}
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    แก้ไขข้อมูล
+                  </Button>
+                </div>
               </DialogHeader>
               <div className="space-y-6">
                 {/* Guest Info */}
@@ -269,6 +330,72 @@ export default function Guests() {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Guest Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>แก้ไขข้อมูลลูกค้า</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div>
+              <Label>ชื่อ-นามสกุล *</Label>
+              <Input
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                placeholder="ชื่อลูกค้า"
+                className="mt-2"
+              />
+            </div>
+
+            <div>
+              <Label>เบอร์โทรศัพท์ *</Label>
+              <Input
+                value={editForm.phone}
+                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                placeholder="081-234-5678"
+                className="mt-2"
+              />
+            </div>
+
+            <div>
+              <Label>อีเมล</Label>
+              <Input
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                placeholder="email@example.com"
+                className="mt-2"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setEditOpen(false)}
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                className="flex-1 bg-resort-primary hover:bg-resort-primary-hover"
+                onClick={handleSaveGuest}
+                disabled={editLoading || !editForm.name || !editForm.phone}
+              >
+                {editLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    กำลังบันทึก...
+                  </>
+                ) : (
+                  'บันทึก'
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

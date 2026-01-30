@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Filter, MoreHorizontal, User, Phone, Check, X } from 'lucide-react';
+import { Plus, Search, Filter, MoreHorizontal, User, Phone, Check, X, Calendar, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { format, differenceInDays } from 'date-fns';
+import { th } from 'date-fns/locale';
 import { useBookingStore, useRoomStore } from '@/stores/supabaseStore';
 
 const statusColors: Record<string, string> = {
@@ -50,12 +55,28 @@ const calculateNights = (checkIn: string, checkOut: string) => {
 };
 
 export default function Bookings() {
-  const { bookings, checkIn, checkOut, cancelBooking, confirmBooking, fetchBookings } = useBookingStore();
+  const { bookings, checkIn, checkOut, cancelBooking, confirmBooking, fetchBookings, createBooking } = useBookingStore();
   const { rooms, fetchRooms } = useRoomStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  
+  // Walk-in booking state
+  const [walkInOpen, setWalkInOpen] = useState(false);
+  const [walkInLoading, setWalkInLoading] = useState(false);
+  const [walkInForm, setWalkInForm] = useState({
+    room_id: '',
+    guest_name: '',
+    guest_phone: '',
+    guest_email: '',
+    check_in: new Date(),
+    check_out: new Date(Date.now() + 86400000),
+    adults: 1,
+    children: 0,
+    notes: '',
+    payment_method: 'cash' as 'cash' | 'transfer' | 'card',
+  });
 
   useEffect(() => {
     fetchBookings();
@@ -100,6 +121,63 @@ export default function Bookings() {
     fetchBookings();
   };
 
+  // Walk-in booking handlers
+  const handleWalkInSubmit = async () => {
+    if (!walkInForm.room_id || !walkInForm.guest_name || !walkInForm.guest_phone) {
+      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      return;
+    }
+
+    setWalkInLoading(true);
+    try {
+      const selectedRoom = rooms.find(r => r.id === walkInForm.room_id);
+      const nights = differenceInDays(walkInForm.check_out, walkInForm.check_in);
+      const totalAmount = (selectedRoom?.price || 0) * nights;
+
+      await createBooking({
+        room_id: walkInForm.room_id,
+        guest_name: walkInForm.guest_name,
+        guest_phone: walkInForm.guest_phone,
+        guest_email: walkInForm.guest_email ? walkInForm.guest_email : '',
+        guest_id_card: null,
+        check_in: format(walkInForm.check_in, 'yyyy-MM-dd'),
+        check_out: format(walkInForm.check_out, 'yyyy-MM-dd'),
+        adults: walkInForm.adults,
+        children: walkInForm.children,
+        notes: walkInForm.notes ? walkInForm.notes : '',
+        total_amount: totalAmount,
+        status: 'confirmed',
+        payment_status: 'pending',
+        payment_method: walkInForm.payment_method,
+      });
+
+      setWalkInOpen(false);
+      setWalkInForm({
+        room_id: '',
+        guest_name: '',
+        guest_phone: '',
+        guest_email: '',
+        check_in: new Date(),
+        check_out: new Date(Date.now() + 86400000),
+        adults: 1,
+        children: 0,
+        notes: '',
+        payment_method: 'cash',
+      });
+      fetchBookings();
+      fetchRooms();
+    } catch (error) {
+      console.error('Error creating walk-in booking:', error);
+      alert('เกิดข้อผิดพลาดในการสร้างการจอง');
+    } finally {
+      setWalkInLoading(false);
+    }
+  };
+
+  const availableRoomsForBooking = rooms.filter(r => r.status === 'available');
+  const walkInNights = differenceInDays(walkInForm.check_out, walkInForm.check_in);
+  const walkInTotal = (rooms.find(r => r.id === walkInForm.room_id)?.price || 0) * walkInNights;
+
   // Stats
   const totalBookings = bookings.length;
   const pendingBookings = bookings.filter(b => b.status === 'pending').length;
@@ -118,7 +196,7 @@ export default function Bookings() {
           <h1 className="text-2xl font-bold text-resort-text">การจองทั้งหมด</h1>
           <p className="text-gray-500">จัดการและดูรายละเอียดการจอง</p>
         </div>
-        <Button className="bg-resort-primary hover:bg-resort-primary-hover">
+        <Button className="bg-resort-primary hover:bg-resort-primary-hover" onClick={() => setWalkInOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           รับจอง Walk-in
         </Button>
@@ -397,6 +475,200 @@ export default function Bookings() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+      {/* Walk-in Booking Dialog */}
+      <Dialog open={walkInOpen} onOpenChange={setWalkInOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>รับจอง Walk-in</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            {/* Room Selection */}
+            <div>
+              <Label>เลือกห้องพัก *</Label>
+              <Select
+                value={walkInForm.room_id}
+                onValueChange={(value) => setWalkInForm({ ...walkInForm, room_id: value })}
+              >
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="เลือกห้องพัก" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableRoomsForBooking.map((room) => (
+                    <SelectItem key={room.id} value={room.id}>
+                      {room.name_th} - ฿{room.price?.toLocaleString()}/คืน
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {availableRoomsForBooking.length === 0 && (
+                <p className="text-sm text-red-500 mt-1">ไม่มีห้องว่าง</p>
+              )}
+            </div>
+
+            {/* Date Selection */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>วันที่เข้าพัก *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full mt-2 justify-start">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      {format(walkInForm.check_in, 'd MMM yyyy', { locale: th })}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <CalendarComponent
+                      mode="single"
+                      selected={walkInForm.check_in}
+                      onSelect={(date) => date && setWalkInForm({ ...walkInForm, check_in: date })}
+                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div>
+                <Label>วันที่ออก *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full mt-2 justify-start">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      {format(walkInForm.check_out, 'd MMM yyyy', { locale: th })}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <CalendarComponent
+                      mode="single"
+                      selected={walkInForm.check_out}
+                      onSelect={(date) => date && setWalkInForm({ ...walkInForm, check_out: date })}
+                      disabled={(date) => date <= walkInForm.check_in}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            {/* Guest Info */}
+            <div>
+              <Label>ชื่อ-นามสกุล *</Label>
+              <Input
+                value={walkInForm.guest_name}
+                onChange={(e) => setWalkInForm({ ...walkInForm, guest_name: e.target.value })}
+                placeholder="ชื่อผู้เข้าพัก"
+                className="mt-2"
+              />
+            </div>
+
+            <div>
+              <Label>เบอร์โทรศัพท์ *</Label>
+              <Input
+                value={walkInForm.guest_phone}
+                onChange={(e) => setWalkInForm({ ...walkInForm, guest_phone: e.target.value })}
+                placeholder="081-234-5678"
+                className="mt-2"
+              />
+            </div>
+
+            <div>
+              <Label>อีเมล (ไม่บังคับ)</Label>
+              <Input
+                type="email"
+                value={walkInForm.guest_email}
+                onChange={(e) => setWalkInForm({ ...walkInForm, guest_email: e.target.value })}
+                placeholder="email@example.com"
+                className="mt-2"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>ผู้ใหญ่</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={walkInForm.adults}
+                  onChange={(e) => setWalkInForm({ ...walkInForm, adults: parseInt(e.target.value) || 1 })}
+                  className="mt-2"
+                />
+              </div>
+              <div>
+                <Label>เด็ก</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={walkInForm.children}
+                  onChange={(e) => setWalkInForm({ ...walkInForm, children: parseInt(e.target.value) || 0 })}
+                  className="mt-2"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>วิธีการชำระเงิน</Label>
+              <Select
+                value={walkInForm.payment_method}
+                onValueChange={(value: 'cash' | 'transfer' | 'card') => setWalkInForm({ ...walkInForm, payment_method: value })}
+              >
+                <SelectTrigger className="mt-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">เงินสด</SelectItem>
+                  <SelectItem value="transfer">โอนเงิน</SelectItem>
+                  <SelectItem value="card">บัตรเครดิต</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>หมายเหตุ</Label>
+              <Input
+                value={walkInForm.notes}
+                onChange={(e) => setWalkInForm({ ...walkInForm, notes: e.target.value })}
+                placeholder="หมายเหตุเพิ่มเติม..."
+                className="mt-2"
+              />
+            </div>
+
+            {/* Summary */}
+            {walkInForm.room_id && walkInNights > 0 && (
+              <div className="p-4 bg-resort-cream rounded-lg">
+                <div className="flex justify-between mb-2">
+                  <span>จำนวนคืน</span>
+                  <span>{walkInNights} คืน</span>
+                </div>
+                <div className="flex justify-between text-lg font-bold">
+                  <span>ยอดรวม</span>
+                  <span className="text-resort-accent">฿{walkInTotal.toLocaleString()}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setWalkInOpen(false)}
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                className="flex-1 bg-resort-primary hover:bg-resort-primary-hover"
+                onClick={handleWalkInSubmit}
+                disabled={walkInLoading || !walkInForm.room_id || !walkInForm.guest_name || !walkInForm.guest_phone}
+              >
+                {walkInLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    กำลังบันทึก...
+                  </>
+                ) : (
+                  'ยืนยันการจอง'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>    </div>
   );
 }
