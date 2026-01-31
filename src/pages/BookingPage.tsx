@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { format, differenceInDays } from 'date-fns';
 import { th } from 'date-fns/locale';
-import { ArrowRight, ArrowLeft, Check, Loader2, Home, Users, Calendar, Phone } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Check, Loader2, Home, Users, Calendar, Phone, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { useBookingStore, useGuestStore, useRoomStore } from '@/stores/supabaseStore';
-import { supabase } from '@/lib/supabase';
+import { supabase, checkRoomAvailability, getAvailableRooms } from '@/lib/supabase';
 
 export default function BookingPage() {
   const [searchParams] = useSearchParams();
@@ -28,6 +28,9 @@ export default function BookingPage() {
   const [step, setStep] = useState<number>(1);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [bookingId, setBookingId] = useState<string>('');
+  const [availabilityError, setAvailabilityError] = useState<string>('');
+  const [filteredRooms, setFilteredRooms] = useState<typeof rooms>([]);
   
   // Step 1: Date & Guest Count
   const [checkIn, setCheckIn] = useState<string>('');
@@ -56,17 +59,59 @@ export default function BookingPage() {
       setSelectedRoomId(roomId);
     }
   }, [roomId]);
+
+  // Fetch available rooms when dates change
+  useEffect(() => {
+    const fetchAvailable = async () => {
+      if (checkIn && checkOut) {
+        try {
+          const available = await getAvailableRooms(checkIn, checkOut);
+          setFilteredRooms(available);
+          
+          // If selected room is no longer available, clear selection
+          if (selectedRoomId && !available.find(r => r.id === selectedRoomId)) {
+            setSelectedRoomId('');
+            setAvailabilityError('ห้องที่เลือกไม่ว่างในช่วงวันที่ระบุ กรุณาเลือกห้องใหม่');
+          } else {
+            setAvailabilityError('');
+          }
+        } catch (error) {
+          console.error('Error fetching available rooms:', error);
+        }
+      } else {
+        setFilteredRooms(rooms.filter(r => r.status === 'available'));
+      }
+    };
+    
+    fetchAvailable();
+  }, [checkIn, checkOut, rooms, selectedRoomId]);
   
   const selectedRoom = rooms.find(r => r.id === selectedRoomId);
   const nights = checkIn && checkOut ? differenceInDays(new Date(checkOut), new Date(checkIn)) : 0;
   const totalAmount = selectedRoom ? selectedRoom.price * nights : 0;
-  const availableRooms = rooms.filter(r => r.status === 'available');
+  const availableRooms = filteredRooms.length > 0 ? filteredRooms : rooms.filter(r => r.status === 'available');
   
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === 1 && checkIn && checkOut && nights > 0) {
       setStep(2);
     } else if (step === 2 && selectedRoomId) {
-      setStep(3);
+      // Double check availability before proceeding
+      setLoading(true);
+      try {
+        const { available, conflictingBookings } = await checkRoomAvailability(selectedRoomId, checkIn, checkOut);
+        if (!available) {
+          setAvailabilityError(`ห้องนี้ไม่ว่างในช่วงวันที่เลือก มีการจองอยู่แล้ว`);
+          setLoading(false);
+          return;
+        }
+        setAvailabilityError('');
+        setStep(3);
+      } catch (error) {
+        console.error('Error checking availability:', error);
+        setAvailabilityError('เกิดข้อผิดพลาดในการตรวจสอบ กรุณาลองใหม่');
+      } finally {
+        setLoading(false);
+      }
     }
   };
   
@@ -117,6 +162,7 @@ export default function BookingPage() {
         notes: 'รอการชำระเงิน'
       });
       
+      setBookingId(booking.id);
       setSuccess(true);
     } catch (error) {
       console.error('Booking error:', error);
@@ -136,16 +182,32 @@ export default function BookingPage() {
               <Check className="w-10 h-10 text-green-600" />
             </div>
             <h2 className="text-2xl font-semibold text-resort-text mb-3">จองสำเร็จ!</h2>
-            <p className="text-gray-600 mb-8">
+            <p className="text-gray-600 mb-4">
               กรุณารอการยืนยันจากทางรีสอร์ท<br />
               เราจะติดต่อกลับภายใน 24 ชั่วโมง
             </p>
-            <Link to="/">
-              <Button className="w-full bg-resort-primary hover:bg-resort-primary-hover h-14 transition-all duration-300">
-                <Home className="w-5 h-5 mr-2" />
-                กลับหน้าหลัก
-              </Button>
-            </Link>
+            
+            {bookingId && (
+              <div className="bg-resort-cream p-4 rounded-lg mb-6">
+                <p className="text-sm text-gray-500 mb-1">รหัสการจอง</p>
+                <p className="text-lg font-mono font-bold text-resort-primary">{bookingId.slice(0, 8).toUpperCase()}</p>
+                <p className="text-xs text-gray-400 mt-2">บันทึกรหัสนี้ไว้เพื่อตรวจสอบสถานะการจอง</p>
+              </div>
+            )}
+            
+            <div className="space-y-3">
+              <Link to={`/check-booking?phone=${guestInfo.phone}`}>
+                <Button variant="outline" className="w-full h-12">
+                  ตรวจสอบสถานะการจอง
+                </Button>
+              </Link>
+              <Link to="/">
+                <Button className="w-full bg-resort-primary hover:bg-resort-primary-hover h-12 transition-all duration-300">
+                  <Home className="w-5 h-5 mr-2" />
+                  กลับหน้าหลัก
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -215,7 +215,7 @@ export async function getAvailableRooms(checkIn?: string, checkOut?: string) {
       .from('bookings')
       .select('room_id')
       .or(`and(check_in.lte.${checkOut},check_out.gte.${checkIn})`)
-      .in('status', ['confirmed', 'checked-in']);
+      .in('status', ['pending', 'confirmed', 'checked-in']);
     
     if (bookedRoomIds && bookedRoomIds.length > 0) {
       const ids = bookedRoomIds.map(b => b.room_id);
@@ -226,6 +226,23 @@ export async function getAvailableRooms(checkIn?: string, checkOut?: string) {
   const { data, error } = await query;
   if (error) throw error;
   return data || [];
+}
+
+// Check if a specific room is available for booking
+export async function checkRoomAvailability(roomId: string, checkIn: string, checkOut: string): Promise<{ available: boolean; conflictingBookings?: any[] }> {
+  const { data: conflicting, error } = await supabase
+    .from('bookings')
+    .select('id, guest_name, check_in, check_out, status')
+    .eq('room_id', roomId)
+    .or(`and(check_in.lt.${checkOut},check_out.gt.${checkIn})`)
+    .in('status', ['pending', 'confirmed', 'checked-in']);
+  
+  if (error) throw error;
+  
+  return {
+    available: !conflicting || conflicting.length === 0,
+    conflictingBookings: conflicting || []
+  };
 }
 
 export async function createBooking(booking: Database['public']['Tables']['bookings']['Insert']) {

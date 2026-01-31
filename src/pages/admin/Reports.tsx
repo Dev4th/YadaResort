@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Calendar, TrendingUp, Users, Bed, Coffee, Download } from 'lucide-react';
+import { Calendar, TrendingUp, Users, Bed, Coffee, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,6 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useBookingStore, useRoomStore, useOrderStore, useDashboardStore, useProductStore } from '@/stores/supabaseStore';
 import { supabase } from '@/lib/supabase';
 import {
@@ -164,6 +170,68 @@ export default function Reports() {
       .slice(0, 5);
   }, [orders, products]);
 
+  // Export functions
+  const exportToCSV = (data: any[], filename: string) => {
+    if (!data.length) return;
+    
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => headers.map(h => `"${row[h] || ''}"`).join(','))
+    ].join('\n');
+    
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${filename}_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    link.click();
+  };
+
+  const exportBookingsToCSV = () => {
+    const data = bookings.map(b => {
+      const room = rooms.find(r => r.id === b.room_id);
+      return {
+        'รหัสการจอง': b.id.slice(0, 8).toUpperCase(),
+        'ชื่อลูกค้า': b.guest_name,
+        'เบอร์โทร': b.guest_phone,
+        'ห้องพัก': room?.name_th || room?.name || '',
+        'วันเข้าพัก': format(new Date(b.check_in), 'dd/MM/yyyy'),
+        'วันออก': format(new Date(b.check_out), 'dd/MM/yyyy'),
+        'ยอดเงิน': b.total_amount,
+        'สถานะ': b.status,
+        'สถานะการชำระ': b.payment_status,
+      };
+    });
+    exportToCSV(data, 'bookings_report');
+  };
+
+  const exportRevenueToCSV = () => {
+    const data = revenueData.map(r => ({
+      'เดือน': r.name,
+      'รายได้ห้องพัก': r.room,
+      'รายได้อาหาร/เครื่องดื่ม': r.fnb,
+      'รวม': r.room + r.fnb,
+    }));
+    exportToCSV(data, 'revenue_report');
+  };
+
+  const exportOccupancyToCSV = () => {
+    const data = occupancyData.map(o => ({
+      'วัน': o.name,
+      'อัตราการเข้าพัก (%)': o.rate,
+    }));
+    exportToCSV(data, 'occupancy_report');
+  };
+
+  const exportTopProductsToCSV = () => {
+    const data = topProducts.map(p => ({
+      'สินค้า': p.name,
+      'จำนวนขาย': p.sales,
+      'รายได้': p.revenue,
+    }));
+    exportToCSV(data, 'top_products_report');
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -185,10 +253,32 @@ export default function Reports() {
               <SelectItem value="year">ปีนี้</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            ส่งออก
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Download className="w-4 h-4 mr-2" />
+                ส่งออก
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={exportBookingsToCSV}>
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                รายงานการจอง (CSV)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportRevenueToCSV}>
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                รายงานรายได้ (CSV)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportOccupancyToCSV}>
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                รายงานอัตราเข้าพัก (CSV)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportTopProductsToCSV}>
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                รายงานสินค้าขายดี (CSV)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

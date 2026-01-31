@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { useProductStore, useOrderStore, useSettingsStore } from '@/stores/supabaseStore';
 import { generatePromptPayQR, generateBankTransferQR, THAI_BANKS } from '@/lib/promptpay';
@@ -441,7 +442,7 @@ export default function Bar() {
 
       {/* Checkout Dialog */}
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>ชำระเงิน</DialogTitle>
           </DialogHeader>
@@ -507,7 +508,7 @@ export default function Bar() {
 
       {/* Payment Info Dialog (for Transfer/PromptPay) */}
       <Dialog open={paymentInfoOpen} onOpenChange={setPaymentInfoOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {selectedPayment === 'promptpay' ? (
@@ -681,31 +682,33 @@ export default function Bar() {
 
       {/* Receipt Dialog */}
       <Dialog open={receiptOpen} onOpenChange={setReceiptOpen}>
-        <DialogContent className="max-w-md p-0 overflow-hidden">
-          <div className="p-4 bg-white flex items-center justify-between border-b">
-            <div className="flex items-center gap-2">
-              <Receipt className="w-5 h-5 text-resort-accent" />
-              <span className="font-semibold">ใบเสร็จรับเงิน</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handlePrintReceipt}
-                className="gap-2"
-              >
-                <Printer className="w-4 h-4" />
-                พิมพ์
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setReceiptOpen(false)}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
+        <DialogContent className="max-w-md p-0 overflow-hidden" aria-describedby={undefined}>
+          <DialogHeader className="p-4 bg-white border-b">
+            <DialogTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Receipt className="w-5 h-5 text-resort-accent" />
+                <span>ใบเสร็จรับเงิน</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handlePrintReceipt}
+                  className="gap-2"
+                >
+                  <Printer className="w-4 h-4" />
+                  พิมพ์
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setReceiptOpen(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
 
           {receiptData && (
             <div ref={receiptRef} className="p-6">

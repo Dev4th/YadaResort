@@ -399,7 +399,8 @@ interface AuthState {
   session: any;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  error: string | null;
+  login: (username: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   checkSession: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
@@ -412,70 +413,100 @@ export const useAuthStore = create<AuthState>()(
       session: null,
       isAuthenticated: false,
       loading: false,
+      error: null,
       
-      login: async (email: string, password: string) => {
-        set({ loading: true });
+      login: async (username: string, password: string) => {
+        set({ loading: true, error: null });
         try {
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password
-          });
+          // Try RPC function first (for hashed passwords)
+          const { data: rpcData, error: rpcError } = await supabase
+            .rpc('simple_login', { p_username: username, p_password: password });
           
-          if (error) {
-            set({ loading: false });
+          if (!rpcError && rpcData && rpcData.length > 0) {
+            const userData = rpcData[0];
+            set({
+              user: userData,
+              session: { access_token: 'local-session', user: userData },
+              isAuthenticated: true,
+              loading: false,
+              error: null
+            });
+            return true;
+          }
+          
+          // Fallback to simple query (for plain text passwords during migration)
+          const { data: userData, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('username', username)
+            .eq('status', 'active')
+            .single();
+          
+          if (error || !userData) {
+            set({ loading: false, error: 'ไม่พบผู้ใช้งานนี้' });
             return false;
           }
           
-          // Get user profile
-          const { data: userData } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', data.user.id)
-            .single();
+          // Simple password check (for migration period)
+          if (userData.password !== password) {
+            set({ loading: false, error: 'รหัสผ่านไม่ถูกต้อง' });
+            return false;
+          }
           
           set({
             user: userData,
-            session: data.session,
+            session: { access_token: 'local-session', user: userData },
             isAuthenticated: true,
-            loading: false
+            loading: false,
+            error: null
           });
           
           return true;
-        } catch (error) {
-          set({ loading: false });
+        } catch (error: any) {
+          set({ loading: false, error: error.message || 'เกิดข้อผิดพลาด' });
           return false;
         }
       },
       
       logout: async () => {
-        await supabase.auth.signOut();
         set({
           user: null,
           session: null,
-          isAuthenticated: false
+          isAuthenticated: false,
+          error: null
         });
       },
       
       checkSession: async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-          const { data: userData } = await supabase
+        // Check if session exists in persisted state
+        const { user, session } = get();
+        if (user && session) {
+          // Verify user still exists and is active
+          const { data: userData, error } = await supabase
             .from('users')
             .select('*')
-            .eq('id', session.user.id)
+            .eq('id', user.id)
             .single();
           
-          set({
-            user: userData,
-            session,
-            isAuthenticated: true
-          });
+          if (error || !userData || userData.status !== 'active') {
+            set({
+              user: null,
+              session: null,
+              isAuthenticated: false
+            });
+          } else {
+            set({
+              user: userData,
+              isAuthenticated: true
+            });
+          }
         }
       },
       
       hasPermission: (permission: string) => {
         const { user } = get();
+        if (!user) return false;
+        if (user.role === 'admin' || user.role === 'owner') return true; // Admin/Owner has all permissions
         return user?.permissions?.includes(permission) || false;
       }
     }),
@@ -592,15 +623,26 @@ export const useSettingsStore = create(
       saveSettings: async () => {
         set({ loading: true });
         try {
-          // บันทึกลง Supabase (ถ้ามี table settings)
           const { settings } = get();
+          
+          // Try to upsert settings
           const { error } = await supabase
             .from('settings')
-            .upsert({ id: 'main', data: settings })
-            .select();
+            .upsert({ 
+              id: 'main', 
+              data: settings,
+              updated_at: new Date().toISOString()
+            });
           
-          if (error && error.code !== 'PGRST116') {
-            console.error('Save settings error:', error);
+          if (error) {
+            // If table doesn't exist, just save to localStorage (persist will handle)
+            if (error.code === '42P01') {
+              console.log('Settings table not found, using localStorage only');
+            } else {
+              console.error('Save settings error:', error);
+            }
+          } else {
+            console.log('Settings saved to database');
           }
         } catch (error) {
           console.error('Save settings error:', error);
@@ -620,9 +662,10 @@ export const useSettingsStore = create(
           
           if (data && !error) {
             set({ settings: { ...defaultSettings, ...data.data } });
+            console.log('Settings loaded from database');
           }
         } catch (error) {
-          console.error('Load settings error:', error);
+          console.log('Using localStorage settings');
         } finally {
           set({ loading: false });
         }

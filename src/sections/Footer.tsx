@@ -16,10 +16,10 @@ const quickLinks = [
 ];
 
 const supportLinks = [
-  { name: 'นโยบายการจอง', href: '#' },
-  { name: 'ข้อกำหนดและเงื่อนไข', href: '#' },
-  { name: 'นโยบายความเป็นส่วนตัว', href: '#' },
-  { name: 'คำถามที่พบบ่อย', href: '#' },
+  { name: 'นโยบายการจอง', href: '/terms' },
+  { name: 'ข้อกำหนดและเงื่อนไข', href: '/terms' },
+  { name: 'นโยบายความเป็นส่วนตัว', href: '/privacy' },
+  { name: 'ตรวจสอบการจอง', href: '/check-booking' },
 ];
 
 export default function Footer() {

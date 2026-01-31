@@ -11,6 +11,9 @@ import Contact from './sections/Contact';
 import Footer from './sections/Footer';
 import AdminDashboard from './pages/AdminDashboard';
 import BookingPage from './pages/BookingPage';
+import CheckBookingPage from './pages/CheckBookingPage';
+import NotFound from './pages/NotFound';
+import TermsAndPrivacy from './pages/TermsAndPrivacy';
 import { useRoomStore, useProductStore } from './stores/supabaseStore';
 
 // Landing Page Component
@@ -44,7 +47,11 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/booking" element={<BookingPage />} />
+        <Route path="/check-booking" element={<CheckBookingPage />} />
+        <Route path="/terms" element={<TermsAndPrivacy />} />
+        <Route path="/privacy" element={<TermsAndPrivacy />} />
         <Route path="/admin/*" element={<AdminDashboard />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );

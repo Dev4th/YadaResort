@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, LayoutGrid, List, Sparkles, Wrench, Bed, Loader2 } from 'lucide-react';
+import { Plus, Search, LayoutGrid, List, Sparkles, Wrench, Bed, Loader2, Edit, X, Wifi, Tv, Wind, Car, Coffee, Utensils } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -19,6 +22,20 @@ import {
 } from '@/components/ui/select';
 import { useRoomStore } from '@/stores/supabaseStore';
 import { supabase } from '@/lib/supabase';
+
+// Available amenities list
+const AVAILABLE_AMENITIES = [
+  { id: 'wifi', name: 'Wi-Fi', nameTh: 'ไวไฟ', icon: Wifi },
+  { id: 'tv', name: 'TV', nameTh: 'ทีวี', icon: Tv },
+  { id: 'aircon', name: 'Air Conditioning', nameTh: 'แอร์', icon: Wind },
+  { id: 'parking', name: 'Parking', nameTh: 'ที่จอดรถ', icon: Car },
+  { id: 'coffee', name: 'Coffee Maker', nameTh: 'เครื่องชงกาแฟ', icon: Coffee },
+  { id: 'minibar', name: 'Minibar', nameTh: 'มินิบาร์', icon: Utensils },
+  { id: 'balcony', name: 'Balcony', nameTh: 'ระเบียง', icon: Wind },
+  { id: 'bathtub', name: 'Bathtub', nameTh: 'อ่างอาบน้ำ', icon: Coffee },
+  { id: 'safe', name: 'Safe', nameTh: 'ตู้เซฟ', icon: Bed },
+  { id: 'fridge', name: 'Refrigerator', nameTh: 'ตู้เย็น', icon: Utensils },
+];
 
 const statusDot: Record<string, string> = {
   available: 'bg-green-500',
@@ -54,9 +71,113 @@ export default function RoomsPage() {
     type: 'standard',
   });
 
+  // Edit room state
+  const [editRoomOpen, setEditRoomOpen] = useState(false);
+  const [editRoomLoading, setEditRoomLoading] = useState(false);
+  const [editRoomForm, setEditRoomForm] = useState({
+    id: '',
+    name: '',
+    name_th: '',
+    description: '',
+    description_th: '',
+    capacity: 2,
+    price: 0,
+    amenities: [] as string[],
+    bed_type: '',
+    view: '',
+  });
+
   useEffect(() => {
     fetchRooms();
   }, []);
+
+  // Map old format amenities to new format
+  const mapOldToNewAmenities = (amenities: string[]): string[] => {
+    const mapping: Record<string, string> = {
+      'WiFi': 'wifi',
+      'TV': 'tv',
+      'Air Conditioning': 'aircon',
+      'Hot Water': 'hotwater',
+      'Work Desk': 'workdesk',
+      'Balcony': 'balcony',
+      'Mini Bar': 'minibar',
+      'Kitchenette': 'kitchenette',
+      'Private Pool': 'privatepool',
+      'Full Kitchen': 'fullkitchen',
+      'Outdoor Shower': 'outdoorshower',
+    };
+    
+    const validIds = AVAILABLE_AMENITIES.map(a => a.id);
+    const converted = amenities.map(a => mapping[a] || a);
+    // Only keep valid amenity IDs and remove duplicates
+    return [...new Set(converted.filter(a => validIds.includes(a)))];
+  };
+
+  // Open edit dialog with room data
+  const handleEditRoom = (room: any) => {
+    const convertedAmenities = mapOldToNewAmenities(room.amenities || []);
+    setEditRoomForm({
+      id: room.id,
+      name: room.name || '',
+      name_th: room.name_th || '',
+      description: room.description || '',
+      description_th: room.description_th || '',
+      capacity: room.capacity || 2,
+      price: room.price || 0,
+      amenities: convertedAmenities,
+      bed_type: room.bed_type || '',
+      view: room.view || '',
+    });
+    setEditRoomOpen(true);
+    setDetailOpen(false);
+  };
+
+  // Save edited room
+  const handleSaveRoom = async () => {
+    if (!editRoomForm.name || !editRoomForm.name_th || !editRoomForm.price) {
+      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      return;
+    }
+
+    setEditRoomLoading(true);
+    try {
+      const { error } = await supabase
+        .from('rooms')
+        .update({
+          name: editRoomForm.name,
+          name_th: editRoomForm.name_th,
+          description: editRoomForm.description,
+          description_th: editRoomForm.description_th,
+          capacity: editRoomForm.capacity,
+          price: editRoomForm.price,
+          amenities: editRoomForm.amenities,
+          bed_type: editRoomForm.bed_type,
+          view: editRoomForm.view,
+        })
+        .eq('id', editRoomForm.id);
+
+      if (error) throw error;
+
+      setEditRoomOpen(false);
+      fetchRooms();
+      alert('บันทึกข้อมูลห้องพักสำเร็จ');
+    } catch (error) {
+      console.error('Error updating room:', error);
+      alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+    } finally {
+      setEditRoomLoading(false);
+    }
+  };
+
+  // Toggle amenity
+  const toggleAmenity = (amenityId: string) => {
+    setEditRoomForm(prev => ({
+      ...prev,
+      amenities: prev.amenities.includes(amenityId)
+        ? prev.amenities.filter(a => a !== amenityId)
+        : [...prev.amenities, amenityId]
+    }));
+  };
 
   const filteredRooms = rooms.filter((room) => {
     const matchesSearch =
@@ -270,16 +391,38 @@ export default function RoomsPage() {
           {selectedRoom && (
             <>
               <DialogHeader>
-                <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full ${statusDot[selectedRoom.status]}`} />
-                  <DialogTitle>
-                    ห้อง {selectedRoom.name?.match(/\d+/)?.[0] || selectedRoom.id.slice(-3)}
-                  </DialogTitle>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${statusDot[selectedRoom.status]}`} />
+                    <DialogTitle>
+                      ห้อง {selectedRoom.name?.match(/\d+/)?.[0] || selectedRoom.id.slice(-3)}
+                    </DialogTitle>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => handleEditRoom(selectedRoom)}>
+                    <Edit className="w-4 h-4 mr-1" />
+                    แก้ไข
+                  </Button>
                 </div>
                 <p className="text-gray-500">{selectedRoom.name_th || selectedRoom.name}</p>
               </DialogHeader>
               
               <div className="space-y-4 mt-4">
+                {/* Amenities */}
+                {selectedRoom.amenities && selectedRoom.amenities.length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-500 mb-2">สิ่งอำนวยความสะดวก</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedRoom.amenities.map((amenityId: string) => {
+                        const amenity = AVAILABLE_AMENITIES.find(a => a.id === amenityId);
+                        return amenity ? (
+                          <span key={amenityId} className="px-2 py-1 bg-gray-100 rounded-full text-xs">
+                            {amenity.nameTh}
+                          </span>
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                )}
                 {/* Room Info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-3 bg-gray-50 rounded-lg">
@@ -449,6 +592,143 @@ export default function RoomsPage() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Room Dialog */}
+      <Dialog open={editRoomOpen} onOpenChange={setEditRoomOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>แก้ไขห้องพัก</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Basic Info */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>ชื่อห้อง (EN) *</Label>
+                <Input
+                  value={editRoomForm.name}
+                  onChange={(e) => setEditRoomForm({ ...editRoomForm, name: e.target.value })}
+                  placeholder="Standard Room"
+                  className="mt-2"
+                />
+              </div>
+              <div>
+                <Label>ชื่อห้อง (TH) *</Label>
+                <Input
+                  value={editRoomForm.name_th}
+                  onChange={(e) => setEditRoomForm({ ...editRoomForm, name_th: e.target.value })}
+                  placeholder="ห้องมาตรฐาน"
+                  className="mt-2"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>ความจุ (ท่าน) *</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={editRoomForm.capacity}
+                  onChange={(e) => setEditRoomForm({ ...editRoomForm, capacity: parseInt(e.target.value) || 1 })}
+                  className="mt-2"
+                />
+              </div>
+              <div>
+                <Label>ราคา/คืน (บาท) *</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={editRoomForm.price}
+                  onChange={(e) => setEditRoomForm({ ...editRoomForm, price: parseInt(e.target.value) || 0 })}
+                  className="mt-2"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>ประเภทเตียง</Label>
+                <Input
+                  value={editRoomForm.bed_type}
+                  onChange={(e) => setEditRoomForm({ ...editRoomForm, bed_type: e.target.value })}
+                  placeholder="เตียงคู่, เตียงเดี่ยว 2 เตียง"
+                  className="mt-2"
+                />
+              </div>
+              <div>
+                <Label>วิว</Label>
+                <Input
+                  value={editRoomForm.view}
+                  onChange={(e) => setEditRoomForm({ ...editRoomForm, view: e.target.value })}
+                  placeholder="วิวสวน, วิวสระว่ายน้ำ"
+                  className="mt-2"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>รายละเอียด (TH)</Label>
+              <Textarea
+                value={editRoomForm.description_th}
+                onChange={(e) => setEditRoomForm({ ...editRoomForm, description_th: e.target.value })}
+                placeholder="รายละเอียดห้องพัก..."
+                className="mt-2"
+                rows={3}
+              />
+            </div>
+
+            {/* Amenities */}
+            <div>
+              <Label className="mb-3 block">สิ่งอำนวยความสะดวก</Label>
+              <div className="grid grid-cols-2 gap-3">
+                {AVAILABLE_AMENITIES.map((amenity) => {
+                  const Icon = amenity.icon;
+                  const isChecked = editRoomForm.amenities.includes(amenity.id);
+                  return (
+                    <div
+                      key={amenity.id}
+                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        isChecked ? 'bg-resort-primary/10 border-resort-primary' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                      }`}
+                      onClick={() => toggleAmenity(amenity.id)}
+                    >
+                      <Checkbox
+                        checked={isChecked}
+                        onCheckedChange={() => toggleAmenity(amenity.id)}
+                      />
+                      <Icon className={`w-4 h-4 ${isChecked ? 'text-resort-primary' : 'text-gray-500'}`} />
+                      <span className={`text-sm ${isChecked ? 'text-resort-primary font-medium' : 'text-gray-700'}`}>
+                        {amenity.nameTh}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditRoomOpen(false)}>
+              ยกเลิก
+            </Button>
+            <Button
+              className="bg-resort-primary hover:bg-resort-primary-hover"
+              onClick={handleSaveRoom}
+              disabled={editRoomLoading}
+            >
+              {editRoomLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  กำลังบันทึก...
+                </>
+              ) : (
+                'บันทึก'
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

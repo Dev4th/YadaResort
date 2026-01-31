@@ -57,7 +57,7 @@ const permissionLabels: Record<string, string> = {
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('general');
-  const { settings, updateSettings, saveSettings, loading } = useSettingsStore();
+  const { settings, updateSettings, saveSettings, loadSettings, loading } = useSettingsStore();
   
   const [notifications, setNotifications] = useState({
     emailNewBooking: true,
@@ -110,6 +110,8 @@ export default function Settings() {
 
   useEffect(() => {
     fetchUsers();
+    // Load settings from database on mount
+    loadSettings();
   }, []);
 
   // User management handlers
@@ -234,9 +236,9 @@ export default function Settings() {
           <h1 className="text-2xl font-bold text-resort-text">ตั้งค่า</h1>
           <p className="text-resort-text-secondary">จัดการการตั้งค่าระบบและผู้ใช้</p>
         </div>
-        <Button onClick={handleSave} className="bg-resort-primary hover:bg-resort-primary-hover transition-all duration-300">
-          <Save className="w-4 h-4 mr-2" />
-          บันทึก
+        <Button onClick={handleSave} disabled={loading} className="bg-resort-primary hover:bg-resort-primary-hover transition-all duration-300">
+          {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+          {loading ? 'กำลังบันทึก...' : 'บันทึก'}
         </Button>
       </div>
 
