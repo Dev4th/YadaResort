@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, LayoutGrid, List, Sparkles, Wrench, Bed, Loader2, Edit, X, Wifi, Tv, Wind, Car, Coffee, Utensils } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
+import { Plus, Search, LayoutGrid, List, Sparkles, Wrench, Bed, Loader2, Edit, Wifi, Tv, Wind, Car, Coffee, Utensils } from 'lucide-react';
+import PageHeader from '@/components/admin/PageHeader';
+import { roomStatusConfig } from '@/lib/statusConfig';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,8 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useRoomStore } from '@/stores/supabaseStore';
-import { supabase } from '@/lib/supabase';
+import { useRoomStore, useBookingStore } from '@/stores/store';
+import api from '@/lib/api';
 
 // Available amenities list
 const AVAILABLE_AMENITIES = [
@@ -37,12 +41,8 @@ const AVAILABLE_AMENITIES = [
   { id: 'fridge', name: 'Refrigerator', nameTh: 'ตู้เย็น', icon: Utensils },
 ];
 
-const statusDot: Record<string, string> = {
-  available: 'bg-green-500',
-  occupied: 'bg-blue-500',
-  maintenance: 'bg-red-500',
-  cleaning: 'bg-yellow-500',
-};
+const getStatusDot = (status: string) =>
+  roomStatusConfig[status as keyof typeof roomStatusConfig]?.dot ?? 'bg-gray-400';
 
 const getRoomType = (name: string): string => {
   if (name.toLowerCase().includes('family')) return 'แฟมิลี่';
@@ -53,7 +53,9 @@ const getRoomType = (name: string): string => {
 };
 
 export default function RoomsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { rooms, updateRoomStatus, fetchRooms } = useRoomStore();
+  const { bookings, fetchBookings } = useBookingStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -89,7 +91,20 @@ export default function RoomsPage() {
 
   useEffect(() => {
     fetchRooms();
+    fetchBookings();
   }, []);
+
+  useEffect(() => {
+    const highlight = searchParams.get('highlight');
+    if (!highlight || !rooms.length) return;
+    const room = rooms.find((r) => r.id === highlight);
+    if (room) {
+      setSelectedRoom(room);
+      setDetailOpen(true);
+      searchParams.delete('highlight');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [rooms, searchParams, setSearchParams]);
 
   // Map old format amenities to new format
   const mapOldToNewAmenities = (amenities: string[]): string[] => {
@@ -135,15 +150,13 @@ export default function RoomsPage() {
   // Save edited room
   const handleSaveRoom = async () => {
     if (!editRoomForm.name || !editRoomForm.name_th || !editRoomForm.price) {
-      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      toast.error('กรุณากรอกข้อมูลให้ครบถ้วน');
       return;
     }
 
     setEditRoomLoading(true);
     try {
-      const { error } = await supabase
-        .from('rooms')
-        .update({
+      await api.put(`/rooms/${editRoomForm.id}`, {
           name: editRoomForm.name,
           name_th: editRoomForm.name_th,
           description: editRoomForm.description,
@@ -153,17 +166,14 @@ export default function RoomsPage() {
           amenities: editRoomForm.amenities,
           bed_type: editRoomForm.bed_type,
           view: editRoomForm.view,
-        })
-        .eq('id', editRoomForm.id);
-
-      if (error) throw error;
+        });
 
       setEditRoomOpen(false);
       fetchRooms();
-      alert('บันทึกข้อมูลห้องพักสำเร็จ');
+      toast.success('บันทึกข้อมูลห้องพักสำเร็จ');
     } catch (error) {
       console.error('Error updating room:', error);
-      alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+      toast.error('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
     } finally {
       setEditRoomLoading(false);
     }
@@ -177,6 +187,19 @@ export default function RoomsPage() {
         ? prev.amenities.filter(a => a !== amenityId)
         : [...prev.amenities, amenityId]
     }));
+  };
+
+  const handleDeleteRoom = async (id: string) => {
+    if (!confirm('ลบห้องพักนี้? การดำเนินการนี้ไม่สามารถย้อนกลับได้')) return;
+    try {
+      await api.delete(`/rooms/${id}`);
+      setDetailOpen(false);
+      setSelectedRoom(null);
+      fetchRooms();
+    } catch (error) {
+      console.error('Error deleting room:', error);
+      toast.error('เกิดข้อผิดพลาดในการลบห้องพัก');
+    }
   };
 
   const filteredRooms = rooms.filter((room) => {
@@ -193,24 +216,21 @@ export default function RoomsPage() {
 
   const handleAddRoom = async () => {
     if (!roomForm.name || !roomForm.name_th || !roomForm.price) {
-      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      toast.error('กรุณากรอกข้อมูลให้ครบถ้วน');
       return;
     }
 
     setAddRoomLoading(true);
     try {
-      const { error } = await supabase
-        .from('rooms')
-        .insert({
+      await api.post('/rooms', {
           name: roomForm.name,
           name_th: roomForm.name_th,
+          type: roomForm.type,
           description: roomForm.description || null,
           capacity: roomForm.capacity,
           price: roomForm.price,
           status: 'available',
         });
-
-      if (error) throw error;
 
       setAddRoomOpen(false);
       setRoomForm({
@@ -224,7 +244,7 @@ export default function RoomsPage() {
       fetchRooms();
     } catch (error) {
       console.error('Error adding room:', error);
-      alert('เกิดข้อผิดพลาดในการเพิ่มห้องพัก');
+      toast.error('เกิดข้อผิดพลาดในการเพิ่มห้องพัก');
     } finally {
       setAddRoomLoading(false);
     }
@@ -236,21 +256,24 @@ export default function RoomsPage() {
   const occupiedRooms = rooms.filter((r) => r.status === 'occupied').length;
   const cleaningRooms = rooms.filter((r) => r.status === 'cleaning').length;
   const maintenanceRooms = rooms.filter((r) => r.status === 'maintenance').length;
-  const bookedRooms = 0;
+  const bookedRooms = rooms.filter(r =>
+    bookings.some(b =>
+      b.room_id === r.id && ['confirmed', 'checked-in'].includes(b.status)
+    )
+  ).length;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-resort-text">จัดการห้องพัก</h1>
-          <p className="text-gray-500">ดูและจัดการสถานะห้องพักทุกห้อง</p>
-        </div>
-        <Button className="bg-resort-primary hover:bg-resort-primary-hover" onClick={() => setAddRoomOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          เพิ่มห้องพัก
-        </Button>
-      </div>
+      <PageHeader
+        title="จัดการห้องพัก"
+        subtitle="ดูและจัดการสถานะห้องพักทุกห้อง"
+        actions={
+          <Button variant="yada" onClick={() => setAddRoomOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            เพิ่มห้องพัก
+          </Button>
+        }
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
@@ -338,7 +361,7 @@ export default function RoomsPage() {
             variant={viewMode === 'grid' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => setViewMode('grid')}
-            className={viewMode === 'grid' ? 'bg-resort-primary' : ''}
+            className={viewMode === 'grid' ? 'bg-yada-primary' : ''}
           >
             <LayoutGrid className="w-4 h-4" />
           </Button>
@@ -346,7 +369,7 @@ export default function RoomsPage() {
             variant={viewMode === 'list' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => setViewMode('list')}
-            className={viewMode === 'list' ? 'bg-resort-primary' : ''}
+            className={viewMode === 'list' ? 'bg-yada-primary' : ''}
           >
             <List className="w-4 h-4" />
           </Button>
@@ -362,7 +385,7 @@ export default function RoomsPage() {
           return (
             <Card
               key={room.id}
-              className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] border-2 hover:border-resort-accent"
+              className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] border-2 hover:border-yada-accent"
               onClick={() => {
                 setSelectedRoom(room);
                 setDetailOpen(true);
@@ -370,14 +393,14 @@ export default function RoomsPage() {
             >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
-                  <div className={`w-3 h-3 rounded-full ${statusDot[room.status]}`} />
+                  <div className={`w-3 h-3 rounded-full ${getStatusDot(room.status)}`} />
                   <span className="text-xs text-gray-500">{roomType}</span>
                 </div>
-                <h3 className="text-2xl font-bold text-resort-text mb-1">{roomNumber}</h3>
+                <h3 className="text-2xl font-bold text-yada-text mb-1">{roomNumber}</h3>
                 <p className="text-sm text-gray-600 mb-3">{room.name_th || room.name}</p>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-500">{room.capacity} ท่าน</span>
-                  <span className="font-semibold text-resort-accent">฿{room.price?.toLocaleString()}</span>
+                  <span className="font-semibold text-yada-accent">฿{room.price?.toLocaleString()}</span>
                 </div>
               </CardContent>
             </Card>
@@ -393,7 +416,7 @@ export default function RoomsPage() {
               <DialogHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${statusDot[selectedRoom.status]}`} />
+                    <div className={`w-3 h-3 rounded-full ${getStatusDot(selectedRoom.status)}`} />
                     <DialogTitle>
                       ห้อง {selectedRoom.name?.match(/\d+/)?.[0] || selectedRoom.id.slice(-3)}
                     </DialogTitle>
@@ -439,7 +462,7 @@ export default function RoomsPage() {
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <p className="text-xs text-gray-500 mb-1">ราคา/คืน</p>
-                    <p className="font-medium text-resort-accent">฿{selectedRoom.price?.toLocaleString()}</p>
+                    <p className="font-medium text-yada-accent">฿{selectedRoom.price?.toLocaleString()}</p>
                   </div>
                 </div>
 
@@ -483,6 +506,24 @@ export default function RoomsPage() {
                     )}
                   </div>
                 </div>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => handleDeleteRoom(selectedRoom.id)}
+                >
+                  ลบห้องพักนี้
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setDetailOpen(false)}
+                >
+                  ปิด
+                </Button>
               </div>
             </>
           )}
@@ -577,7 +618,7 @@ export default function RoomsPage() {
                 ยกเลิก
               </Button>
               <Button
-                className="flex-1 bg-resort-primary hover:bg-resort-primary-hover"
+                variant="yada" className="flex-1"
                 onClick={handleAddRoom}
                 disabled={addRoomLoading || !roomForm.name || !roomForm.name_th || !roomForm.price}
               >
@@ -691,7 +732,7 @@ export default function RoomsPage() {
                     <div
                       key={amenity.id}
                       className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        isChecked ? 'bg-resort-primary/10 border-resort-primary' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                        isChecked ? 'bg-yada-primary/10 border-yada-primary' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
                       }`}
                       onClick={() => toggleAmenity(amenity.id)}
                     >
@@ -699,8 +740,8 @@ export default function RoomsPage() {
                         checked={isChecked}
                         onCheckedChange={() => toggleAmenity(amenity.id)}
                       />
-                      <Icon className={`w-4 h-4 ${isChecked ? 'text-resort-primary' : 'text-gray-500'}`} />
-                      <span className={`text-sm ${isChecked ? 'text-resort-primary font-medium' : 'text-gray-700'}`}>
+                      <Icon className={`w-4 h-4 ${isChecked ? 'text-yada-primary' : 'text-gray-500'}`} />
+                      <span className={`text-sm ${isChecked ? 'text-yada-primary font-medium' : 'text-gray-700'}`}>
                         {amenity.nameTh}
                       </span>
                     </div>
@@ -715,7 +756,7 @@ export default function RoomsPage() {
               ยกเลิก
             </Button>
             <Button
-              className="bg-resort-primary hover:bg-resort-primary-hover"
+              variant="yada"
               onClick={handleSaveRoom}
               disabled={editRoomLoading}
             >

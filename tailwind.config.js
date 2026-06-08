@@ -4,26 +4,39 @@ module.exports = {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['IBM Plex Sans Thai', 'IBM Plex Sans', 'sans-serif'],
+        display: ['Noto Serif Thai', 'Fraunces', 'serif'],
+      },
       colors: {
-        // Natural Resort Theme - Core Colors
-        'resort': {
-          // Primary - Natural Green
-          'primary': '#2F5D50',
-          'primary-hover': '#4A7C6D',
-          'primary-light': '#5A8A7B',
-          // Secondary - Backgrounds  
-          'cream': '#FAF9F6',
-          'white': '#FFFFFF',
-          // Accent - Wood Brown
-          'accent': '#C2A97E',
-          'accent-hover': '#A88B5A',
-          'accent-light': '#D4BE9A',
-          // Text
-          'text': '#1F2933',
-          'text-secondary': '#6B7280',
-          'text-muted': 'rgba(31, 41, 51, 0.6)',
+        yada: {
+          primary: '#5F8A96',
+          'primary-hover': '#4E7580',
+          'primary-light': '#8FB0BA',
+          sand: '#F9F7F4',
+          surface: '#FDFCFA',
+          white: '#FFFFFF',
+          accent: '#D4C4B0',
+          'accent-hover': '#BFA890',
+          text: '#2E3538',
+          'text-secondary': '#5C6B70',
+          dark: '#2A4349',
+          'dark-hover': '#1F3338',
+          border: '#E5DDD4',
         },
-        // CSS Variable-based colors (for shadcn/ui)
+        resort: {
+          primary: '#5F8A96',
+          'primary-hover': '#4E7580',
+          'primary-light': '#8FB0BA',
+          cream: '#F9F7F4',
+          white: '#FFFFFF',
+          accent: '#D4C4B0',
+          'accent-hover': '#BFA890',
+          'accent-light': '#E8DDD0',
+          text: '#2E3538',
+          'text-secondary': '#5C6B70',
+          'text-muted': 'rgba(46, 53, 56, 0.6)',
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -77,6 +90,7 @@ module.exports = {
       },
       boxShadow: {
         xs: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        yada: "0 4px 24px rgba(42, 67, 73, 0.08)",
       },
       keyframes: {
         "accordion-down": {
@@ -91,11 +105,31 @@ module.exports = {
           "0%,70%,100%": { opacity: "1" },
           "20%,50%": { opacity: "0" },
         },
+        "fade-in-up": {
+          from: { opacity: "0", transform: "translateY(20px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "scale-in": {
+          from: { opacity: "0", transform: "scale(0.95)" },
+          to: { opacity: "1", transform: "scale(1)" },
+        },
+        "shimmer": {
+          from: { transform: "translateX(-100%)" },
+          to: { transform: "translateX(100%)" },
+        },
+        "slide-in-right": {
+          from: { opacity: "0", transform: "translateX(20px)" },
+          to: { opacity: "1", transform: "translateX(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "caret-blink": "caret-blink 1.25s ease-out infinite",
+        "fade-in-up": "fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "scale-in": "scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "shimmer": "shimmer 2s infinite",
+        "slide-in-right": "slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards",
       },
     },
   },

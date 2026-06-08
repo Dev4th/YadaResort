@@ -1,0 +1,246 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String    @id @default(uuid())
+  username    String    @unique
+  name        String
+  email       String    @unique
+  phone       String?
+  role        String    @default("staff")
+  permissions String[]  @default([])
+  password    String?
+  status      String    @default("active")
+  is_active   Boolean   @default(true)
+  last_login  DateTime?
+  created_at  DateTime  @default(now())
+
+  payments             Payment[]
+  room_cleaning        RoomCleaning[]
+  maintenance_requests MaintenanceRequest[]
+  inventory_transactions InventoryTransaction[]
+  payment_slips        PaymentSlip[]
+  audit_logs           AuditLog[]
+
+  @@map("users")
+}
+
+model Room {
+  id             String   @id @default(uuid())
+  name           String
+  name_th        String
+  description    String?
+  description_th String?
+  price          Decimal  @db.Decimal(10, 2)
+  size           Int?
+  capacity       Int      @default(2)
+  amenities      String[] @default([])
+  images         String[] @default([])
+  status         String   @default("available")
+  bed_type       String?
+  view           String?
+  created_at     DateTime @default(now())
+
+  bookings             Booking[]
+  orders               Order[]
+  room_cleaning        RoomCleaning[]
+  maintenance_requests MaintenanceRequest[]
+
+  @@map("rooms")
+}
+
+model Guest {
+  id           String   @id @default(uuid())
+  name         String
+  phone        String   @unique
+  email        String?
+  id_card      String?
+  nationality  String?  @default("Thai")
+  total_visits Int      @default(0)
+  notes        String?
+  created_at   DateTime @default(now())
+
+  @@map("guests")
+}
+
+model Booking {
+  id             String   @id @default(uuid())
+  room_id        String
+  guest_name     String
+  guest_phone    String
+  guest_email    String?
+  guest_id_card  String?
+  check_in       DateTime @db.Date
+  check_out      DateTime @db.Date
+  adults         Int      @default(1)
+  children       Int      @default(0)
+  total_amount   Decimal  @db.Decimal(10, 2)
+  status         String   @default("pending")
+  payment_status String   @default("pending")
+  payment_method String?
+  notes          String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @default(now()) @updatedAt
+
+  room          Room          @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  orders        Order[]
+  payments      Payment[]
+  payment_slips PaymentSlip[]
+
+  @@map("bookings")
+}
+
+model Product {
+  id         String   @id @default(uuid())
+  name       String
+  name_th    String
+  category   String   @default("other")
+  price      Decimal  @db.Decimal(10, 2)
+  cost       Decimal  @default(0) @db.Decimal(10, 2)
+  stock      Int      @default(0)
+  unit       String   @default("ชิ้น")
+  image      String?
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+
+  inventory_transactions InventoryTransaction[]
+
+  @@map("products")
+}
+
+model Order {
+  id             String   @id @default(uuid())
+  booking_id     String?
+  room_id        String?
+  guest_name     String
+  items          Json     @default("[]")
+  subtotal       Decimal  @default(0) @db.Decimal(10, 2)
+  tax            Decimal  @default(0) @db.Decimal(10, 2)
+  total          Decimal  @default(0) @db.Decimal(10, 2)
+  status         String   @default("pending")
+  payment_method String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @default(now()) @updatedAt
+
+  booking  Booking?  @relation(fields: [booking_id], references: [id], onDelete: SetNull)
+  room     Room?     @relation(fields: [room_id], references: [id], onDelete: SetNull)
+  payments Payment[]
+
+  @@map("orders")
+}
+
+model Payment {
+  id         String   @id @default(uuid())
+  booking_id String?
+  order_id   String?
+  amount     Decimal  @db.Decimal(10, 2)
+  method     String   @default("cash")
+  status     String   @default("pending")
+  reference  String?
+  notes      String?
+  created_at DateTime @default(now())
+  created_by String?
+
+  booking    Booking? @relation(fields: [booking_id], references: [id], onDelete: SetNull)
+  order      Order?   @relation(fields: [order_id], references: [id], onDelete: SetNull)
+  created_by_user User? @relation(fields: [created_by], references: [id])
+
+  @@map("payments")
+}
+
+model RoomCleaning {
+  id           String    @id @default(uuid())
+  room_id      String
+  status       String    @default("pending")
+  assigned_to  String?
+  notes        String?
+  started_at   DateTime?
+  completed_at DateTime?
+  created_at   DateTime  @default(now())
+
+  room     Room  @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  assignee User? @relation(fields: [assigned_to], references: [id])
+
+  @@map("room_cleaning")
+}
+
+model MaintenanceRequest {
+  id           String    @id @default(uuid())
+  room_id      String
+  title        String
+  description  String?
+  priority     String    @default("medium")
+  status       String    @default("pending")
+  assigned_to  String?
+  cost         Decimal?  @db.Decimal(10, 2)
+  created_at   DateTime  @default(now())
+  completed_at DateTime?
+
+  room     Room  @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  assignee User? @relation(fields: [assigned_to], references: [id])
+
+  @@map("maintenance_requests")
+}
+
+model InventoryTransaction {
+  id         String   @id @default(uuid())
+  product_id String
+  type       String
+  quantity   Int
+  reason     String?
+  reference  String?
+  created_at DateTime @default(now())
+  created_by String?
+
+  product        Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  created_by_user User?  @relation(fields: [created_by], references: [id])
+
+  @@map("inventory_transactions")
+}
+
+model Settings {
+  id         String   @id @default("main")
+  data       Json     @default("{}")
+  updated_at DateTime @default(now()) @updatedAt
+
+  @@map("settings")
+}
+
+model PaymentSlip {
+  id          String    @id @default(uuid())
+  booking_id  String?
+  image_url   String
+  amount      Decimal?  @db.Decimal(10, 2)
+  status      String    @default("pending")
+  notes       String?
+  uploaded_at DateTime  @default(now())
+  verified_at DateTime?
+  verified_by String?
+
+  booking      Booking? @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  verified_by_user User? @relation(fields: [verified_by], references: [id])
+
+  @@map("payment_slips")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  user_id    String?
+  action     String
+  table_name String
+  record_id  String?
+  old_data   Json?
+  new_data   Json?
+  ip_address String?
+  created_at DateTime @default(now())
+
+  user User? @relation(fields: [user_id], references: [id])
+
+  @@map("audit_logs")
+}

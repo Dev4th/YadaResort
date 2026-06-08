@@ -1,9 +1,25 @@
-import { createClient } from '@supabase/supabase-js';
+/**
+ * supabase.ts — Migration shim
+ * Supabase has been replaced with a self-hosted Postgres + Express API.
+ * Export names are kept identical so existing imports continue to work.
+ */
+import api from './api';
 
-const supabaseUrl = 'https://nsejthphquirtqsuwumc.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zZWp0aHBocXVpcnRxc3V3dW1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk3ODk0MTEsImV4cCI6MjA4NTM2NTQxMX0.1WQ6PVlkJBCboCtZDz4C8nxMTtlccPM_SNAplJw-Hs8';
-
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// Stub: kept so code that imports `supabase` directly won't break at compile time.
+// Real data access goes through the REST helpers below.
+export const supabase = {
+  channel: (_name: string) => ({
+    on: (_event: string, _opts: any, _cb: any) => ({ subscribe: () => ({ unsubscribe: () => {} }) }),
+  }),
+  removeChannel: (_ch: any) => {},
+  auth: {
+    signInWithPassword: async () => ({ data: null, error: null }),
+    signOut: async () => ({ error: null }),
+    getUser: async () => ({ data: { user: null } }),
+  },
+  from: (_table: string) => ({ select: () => ({ data: null, error: null }) }),
+  rpc: async (_fn: string, _args?: any) => ({ data: null, error: null }),
+};
 
 // Database types
 export type Database = {
@@ -114,6 +130,8 @@ export type Database = {
           is_active: boolean;
           last_login: string | null;
           created_at: string;
+          status?: string;
+          password?: string;
         };
         Insert: Omit<Tables['users']['Row'], 'id' | 'created_at'>;
         Update: Partial<Tables['users']['Row']>;
@@ -194,103 +212,39 @@ export type OrderItem = {
 
 // Helper functions
 export async function getRooms() {
-  const { data, error } = await supabase
-    .from('rooms')
-    .select('*')
-    .order('price', { ascending: true });
-  
-  if (error) throw error;
+  const { data } = await api.get('/rooms');
   return data || [];
 }
 
 export async function getAvailableRooms(checkIn?: string, checkOut?: string) {
-  let query = supabase
-    .from('rooms')
-    .select('*')
-    .eq('status', 'available');
-  
-  if (checkIn && checkOut) {
-    // Get rooms that are not booked for the given dates
-    const { data: bookedRoomIds } = await supabase
-      .from('bookings')
-      .select('room_id')
-      .or(`and(check_in.lte.${checkOut},check_out.gte.${checkIn})`)
-      .in('status', ['pending', 'confirmed', 'checked-in']);
-    
-    if (bookedRoomIds && bookedRoomIds.length > 0) {
-      const ids = bookedRoomIds.map(b => b.room_id);
-      query = query.not('id', 'in', `(${ids.join(',')})`);
-    }
-  }
-  
-  const { data, error } = await query;
-  if (error) throw error;
+  const params: Record<string, string> = {};
+  if (checkIn) params.checkIn = checkIn;
+  if (checkOut) params.checkOut = checkOut;
+  const { data } = await api.get('/rooms/available', { params });
   return data || [];
 }
 
 // Check if a specific room is available for booking
 export async function checkRoomAvailability(roomId: string, checkIn: string, checkOut: string): Promise<{ available: boolean; conflictingBookings?: any[] }> {
-  const { data: conflicting, error } = await supabase
-    .from('bookings')
-    .select('id, guest_name, check_in, check_out, status')
-    .eq('room_id', roomId)
-    .or(`and(check_in.lt.${checkOut},check_out.gt.${checkIn})`)
-    .in('status', ['pending', 'confirmed', 'checked-in']);
-  
-  if (error) throw error;
-  
-  return {
-    available: !conflicting || conflicting.length === 0,
-    conflictingBookings: conflicting || []
-  };
+  const { data } = await api.get(`/rooms/availability/${roomId}`, { params: { checkIn, checkOut } });
+  return data;
 }
 
 export async function createBooking(booking: Database['public']['Tables']['bookings']['Insert']) {
-  const { data, error } = await supabase
-    .from('bookings')
-    .insert(booking)
-    .select()
-    .single();
-  
-  if (error) throw error;
+  const { data } = await api.post('/bookings', booking);
   return data;
 }
 
 export async function getBookings(filters?: { status?: string; dateFrom?: string; dateTo?: string }) {
-  let query = supabase
-    .from('bookings')
-    .select('*, rooms(name_th, price)')
-    .order('created_at', { ascending: false });
-  
-  if (filters?.status) {
-    query = query.eq('status', filters.status);
-  }
-  
-  if (filters?.dateFrom) {
-    query = query.gte('check_in', filters.dateFrom);
-  }
-  
-  if (filters?.dateTo) {
-    query = query.lte('check_out', filters.dateTo);
-  }
-  
-  const { data, error } = await query;
-  if (error) throw error;
+  const { data } = await api.get('/bookings', { params: filters });
   return data || [];
 }
 
 export async function updateBookingStatus(
-  id: string, 
+  id: string,
   status: Database['public']['Tables']['bookings']['Row']['status']
 ) {
-  const { data, error } = await supabase
-    .from('bookings')
-    .update({ status, updated_at: new Date().toISOString() })
-    .eq('id', id)
-    .select()
-    .single();
-  
-  if (error) throw error;
+  const { data } = await api.patch(`/bookings/${id}/status`, { status });
   return data;
 }
 
@@ -298,181 +252,78 @@ export async function updateRoomStatus(
   id: string,
   status: Database['public']['Tables']['rooms']['Row']['status']
 ) {
-  const { data, error } = await supabase
-    .from('rooms')
-    .update({ status })
-    .eq('id', id)
-    .select()
-    .single();
-  
-  if (error) throw error;
+  const { data } = await api.patch(`/rooms/${id}/status`, { status });
   return data;
 }
 
 export async function getProducts() {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('is_active', true)
-    .order('category');
-  
-  if (error) throw error;
+  const { data } = await api.get('/products');
   return data || [];
 }
 
 export async function createOrder(order: Database['public']['Tables']['orders']['Insert']) {
-  const { data, error } = await supabase
-    .from('orders')
-    .insert(order)
-    .select()
-    .single();
-  
-  if (error) throw error;
-  
-  // Update product stock
-  for (const item of order.items) {
-    await supabase.rpc('decrease_stock', {
-      p_product_id: item.product_id,
-      p_quantity: item.quantity
-    });
-  }
-  
+  const { data } = await api.post('/orders', order);
   return data;
 }
 
 export async function getOrders(filters?: { status?: string; bookingId?: string }) {
-  let query = supabase
-    .from('orders')
-    .select('*')
-    .order('created_at', { ascending: false });
-  
-  if (filters?.status) {
-    query = query.eq('status', filters.status);
-  }
-  
-  if (filters?.bookingId) {
-    query = query.eq('booking_id', filters.bookingId);
-  }
-  
-  const { data, error } = await query;
-  if (error) throw error;
+  const params: Record<string, string> = {};
+  if (filters?.status) params.status = filters.status;
+  if (filters?.bookingId) params.bookingId = filters.bookingId;
+  const { data } = await api.get('/orders', { params });
   return data || [];
 }
 
 export async function createPayment(payment: Database['public']['Tables']['payments']['Insert']) {
-  const { data, error } = await supabase
-    .from('payments')
-    .insert(payment)
-    .select()
-    .single();
-  
-  if (error) throw error;
+  const { data } = await api.post('/payments', payment);
   return data;
 }
 
 export async function getDashboardStats() {
-  const today = new Date().toISOString().split('T')[0];
-  
-  const [
-    { data: totalBookings },
-    { data: todayCheckIns },
-    { data: todayCheckOuts },
-    { data: occupiedRooms },
-    { data: availableRooms },
-    { data: pendingOrders },
-    { data: todayRevenue },
-    { data: monthlyRevenue }
-  ] = await Promise.all([
-    supabase.from('bookings').select('id', { count: 'exact' }),
-    supabase.from('bookings').select('id', { count: 'exact' }).eq('check_in', today).eq('status', 'confirmed'),
-    supabase.from('bookings').select('id', { count: 'exact' }).eq('check_out', today).eq('status', 'checked-in'),
-    supabase.from('rooms').select('id', { count: 'exact' }).eq('status', 'occupied'),
-    supabase.from('rooms').select('id', { count: 'exact' }).eq('status', 'available'),
-    supabase.from('orders').select('id', { count: 'exact' }).neq('status', 'paid'),
-    supabase.rpc('get_today_revenue'),
-    supabase.rpc('get_monthly_revenue')
-  ]);
-  
-  return {
-    totalBookings: totalBookings?.length || 0,
-    todayCheckIns: todayCheckIns?.length || 0,
-    todayCheckOuts: todayCheckOuts?.length || 0,
-    occupiedRooms: occupiedRooms?.length || 0,
-    availableRooms: availableRooms?.length || 0,
-    pendingOrders: pendingOrders?.length || 0,
-    todayRevenue: todayRevenue || 0,
-    monthlyRevenue: monthlyRevenue || 0
-  };
+  const { data } = await api.get('/dashboard/stats');
+  return data;
 }
 
 export async function getGuests() {
-  const { data, error } = await supabase
-    .from('guests')
-    .select('*, bookings(*)')
-    .order('created_at', { ascending: false });
-  
-  if (error) throw error;
+  const { data } = await api.get('/guests');
   return data || [];
 }
 
 export async function upsertGuest(guest: Database['public']['Tables']['guests']['Insert']) {
-  const { data, error } = await supabase
-    .from('guests')
-    .upsert(guest, { onConflict: 'phone' })
-    .select()
-    .single();
-  
-  if (error) throw error;
+  const { data } = await api.post('/guests', guest);
   return data;
 }
 
 // Auth functions
-export async function signInWithPassword(email: string, password: string) {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
-  
-  if (error) throw error;
-  return data;
+export async function signInWithPassword(_email: string, _password: string) {
+  return { data: null, error: new Error('Use username/password login instead') };
 }
 
 export async function signOut() {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  await api.post('/auth/logout').catch(() => {});
 }
 
 export async function getCurrentUser() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  
-  const { data } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', user.id)
-    .single();
-  
-  return data;
+  try {
+    const { data } = await api.get('/auth/me');
+    return data;
+  } catch {
+    return null;
+  }
 }
 
-// Realtime subscriptions
-export function subscribeToBookings(callback: (payload: any) => void) {
-  return supabase
-    .channel('bookings')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, callback)
-    .subscribe();
+// Realtime stubs — replaced by Socket.io (see src/lib/socket.ts)
+export function subscribeToBookings(_callback: (payload: any) => void) {
+  console.info('[supabase] subscribeToBookings → use Socket.io instead');
+  return { unsubscribe: () => {} };
 }
 
-export function subscribeToOrders(callback: (payload: any) => void) {
-  return supabase
-    .channel('orders')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, callback)
-    .subscribe();
+export function subscribeToOrders(_callback: (payload: any) => void) {
+  console.info('[supabase] subscribeToOrders → use Socket.io instead');
+  return { unsubscribe: () => {} };
 }
 
-export function subscribeToRooms(callback: (payload: any) => void) {
-  return supabase
-    .channel('rooms')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, callback)
-    .subscribe();
+export function subscribeToRooms(_callback: (payload: any) => void) {
+  console.info('[supabase] subscribeToRooms → use Socket.io instead');
+  return { unsubscribe: () => {} };
 }

@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Check, Heart, Home, Leaf, Users } from 'lucide-react';
-import { useRoomStore, useBookingStore } from '@/stores/supabaseStore';
+import { prefersReducedMotion } from '@/lib/motion';
+import { useRoomStore } from '@/stores/store';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -18,30 +19,23 @@ export default function About() {
   const imageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   
-  // Fetch real data from stores
+  // Fetch real data from stores (rooms only - bookings require auth)
   const { rooms, fetchRooms } = useRoomStore();
-  const { bookings, fetchBookings } = useBookingStore();
-  const [stats, setStats] = useState({ rooms: 0, customers: 0, rating: 4.8 });
+  const [stats, setStats] = useState({ rooms: 0, customers: 500, rating: 4.8 });
 
   useEffect(() => {
     fetchRooms();
-    fetchBookings();
-  }, [fetchRooms, fetchBookings]);
+  }, [fetchRooms]);
 
   useEffect(() => {
-    // Calculate real stats from data
-    const roomCount = rooms.length;
-    // Count unique customers from bookings
-    const uniqueCustomers = new Set(bookings.map(b => b.guest_phone)).size;
-    
-    setStats({
-      rooms: roomCount || 12,
-      customers: uniqueCustomers > 0 ? uniqueCustomers : 500,
-      rating: 4.8, // Could be fetched from a reviews table in the future
-    });
-  }, [rooms, bookings]);
+    setStats(prev => ({
+      ...prev,
+      rooms: rooms.length || 12,
+    }));
+  }, [rooms]);
 
   useEffect(() => {
+    if (prefersReducedMotion()) return;
     const ctx = gsap.context(() => {
       // Image reveal animation
       gsap.fromTo(
@@ -146,7 +140,7 @@ export default function About() {
     <section
       id="about"
       ref={sectionRef}
-      className="py-20 lg:py-32 bg-resort-cream overflow-hidden"
+      className="overflow-hidden bg-yada-sand py-20 lg:py-32"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
@@ -162,23 +156,22 @@ export default function About() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
             </div>
             {/* Floating badge */}
-            <div className="absolute -bottom-6 -right-6 bg-resort-white rounded-xl shadow-xl p-6">
+            <div className="absolute -bottom-6 -right-6 rounded-xl bg-white p-6 shadow-xl">
               <div className="text-center">
-                <span className="text-4xl font-bold text-resort-primary">5+</span>
-                <p className="text-sm text-resort-text-secondary mt-1">ปีประสบการณ์</p>
+                <span className="text-4xl font-bold text-yada-primary">5+</span>
+                <p className="mt-1 text-sm text-yada-text-secondary">ปีประสบการณ์</p>
               </div>
             </div>
-            {/* Accent border */}
-            <div className="absolute -top-4 -left-4 w-24 h-24 border-2 border-resort-accent rounded-xl -z-10" />
+            <div className="absolute -top-4 -left-4 -z-10 h-24 w-24 rounded-xl border-2 border-yada-accent" />
           </div>
 
           {/* Content */}
           <div ref={contentRef}>
             <span className="about-label section-label">เกี่ยวกับเรา</span>
-            <h2 className="about-title text-3xl lg:text-4xl font-bold text-resort-text mb-6 font-serif">
+            <h2 className="about-title font-display mb-6 text-3xl font-bold text-yada-text lg:text-4xl">
               Yada Homestay | ญาดาโฮมสเตย์
             </h2>
-            <p className="about-text text-resort-text-secondary leading-relaxed mb-8">
+            <p className="about-text mb-8 leading-relaxed text-yada-text-secondary">
               ที่พักสไตล์โฮมสเตย์ในเพชรบุรีที่ผสมผสานความสะดวกสบายของที่พักสมัยใหม่เข้ากับเสน่ห์ของธรรมชาติ
               เรามุ่งมั่นที่จะให้บริการที่อบอุ่นและเป็นกันเอง
               เพื่อให้ทุกการเข้าพักของคุณเป็นประสบการณ์ที่น่าจดจำ
@@ -191,10 +184,10 @@ export default function About() {
                   key={index}
                   className="about-feature flex items-center gap-4 group"
                 >
-                  <div className="w-10 h-10 rounded-full bg-resort-primary/10 flex items-center justify-center group-hover:bg-resort-primary transition-colors duration-300">
-                    <Check className="w-5 h-5 text-resort-primary group-hover:text-white transition-colors duration-300" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yada-primary/10 transition-colors duration-300 group-hover:bg-yada-primary">
+                    <Check className="h-5 w-5 text-yada-primary transition-colors duration-300 group-hover:text-white" />
                   </div>
-                  <span className="text-resort-text group-hover:translate-x-1 transition-transform duration-200">
+                  <span className="text-yada-text transition-transform duration-200 group-hover:translate-x-1">
                     {feature.text}
                   </span>
                 </div>
@@ -202,18 +195,18 @@ export default function About() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-6 pt-8 border-t border-gray-200">
+            <div className="grid grid-cols-3 gap-6 border-t border-yada-accent/20 pt-8">
               <div className="text-center">
-                <span className="text-3xl font-bold text-resort-primary">{stats.rooms}</span>
-                <p className="text-sm text-resort-text-secondary mt-1">ห้องพัก</p>
+                <span className="text-3xl font-bold text-yada-primary">{stats.rooms}</span>
+                <p className="mt-1 text-sm text-yada-text-secondary">ห้องพัก</p>
               </div>
               <div className="text-center">
-                <span className="text-3xl font-bold text-resort-primary">{stats.customers}+</span>
-                <p className="text-sm text-resort-text-secondary mt-1">ลูกค้าพึงพอใจ</p>
+                <span className="text-3xl font-bold text-yada-primary">{stats.customers}+</span>
+                <p className="mt-1 text-sm text-yada-text-secondary">ลูกค้าพึงพอใจ</p>
               </div>
               <div className="text-center">
-                <span className="text-3xl font-bold text-resort-primary">{stats.rating}</span>
-                <p className="text-sm text-resort-text-secondary mt-1">คะแนนรีวิว</p>
+                <span className="text-3xl font-bold text-yada-primary">{stats.rating}</span>
+                <p className="mt-1 text-sm text-yada-text-secondary">คะแนนรีวิว</p>
               </div>
             </div>
           </div>

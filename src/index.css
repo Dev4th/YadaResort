@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Noto+Serif+Thai:wght@400;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,39 +6,53 @@
 
 @layer base {
   :root {
-    /* Natural Resort Theme - CSS Variables */
-    --background: 40 20% 98%; /* Cream White #FAF9F6 */
-    --foreground: 210 23% 16%; /* Primary Text #1F2933 */
-    --card: 0 0% 100%; /* Pure White #FFFFFF */
-    --card-foreground: 210 23% 16%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 210 23% 16%;
-    --primary: 161 33% 27%; /* Natural Green #2F5D50 */
+    /* Coastal Mist — soft sea & sand */
+    --background: 36 30% 97%;
+    --foreground: 200 10% 20%;
+    --card: 40 40% 99%;
+    --card-foreground: 200 10% 20%;
+    --popover: 40 40% 99%;
+    --popover-foreground: 200 10% 20%;
+    --primary: 196 22% 48%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 40 20% 98%; /* Cream White */
-    --secondary-foreground: 210 23% 16%;
-    --muted: 40 10% 95%;
-    --muted-foreground: 218 11% 46%; /* Secondary Text #6B7280 */
-    --accent: 39 35% 63%; /* Wood Brown #C2A97E */
-    --accent-foreground: 210 23% 16%;
+    --secondary: 36 30% 97%;
+    --secondary-foreground: 200 10% 20%;
+    --muted: 36 20% 92%;
+    --muted-foreground: 200 8% 40%;
+    --accent: 33 28% 76%;
+    --accent-foreground: 200 10% 20%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 40 10% 88%;
-    --input: 40 10% 88%;
-    --ring: 161 33% 27%; /* Natural Green for focus */
-    --radius: 0.5rem;
-    
-    /* Direct Color Variables - Natural Resort Theme */
-    --resort-primary: #2F5D50;
-    --resort-primary-hover: #4A7C6D;
-    --resort-cream: #FAF9F6;
-    --resort-white: #FFFFFF;
-    --resort-accent: #C2A97E;
-    --resort-accent-hover: #A88B5A;
-    --resort-text: #1F2933;
-    --resort-text-secondary: #6B7280;
-    
-    /* Animation Easings */
+    --border: 33 22% 86%;
+    --input: 33 22% 86%;
+    --ring: 196 22% 48%;
+    --radius: 0.625rem;
+
+    /* Yada brand tokens */
+    --yada-primary: #5F8A96;
+    --yada-primary-hover: #4E7580;
+    --yada-primary-light: #8FB0BA;
+    --yada-sand: #F9F7F4;
+    --yada-surface: #FDFCFA;
+    --yada-white: #FFFFFF;
+    --yada-accent: #D4C4B0;
+    --yada-accent-hover: #BFA890;
+    --yada-text: #2E3538;
+    --yada-text-secondary: #5C6B70;
+    --yada-dark: #2A4349;
+    --yada-dark-hover: #1F3338;
+    --yada-border: #E5DDD4;
+
+    /* Resort aliases → yada (backward compat) */
+    --resort-primary: var(--yada-primary);
+    --resort-primary-hover: var(--yada-primary-hover);
+    --resort-cream: var(--yada-sand);
+    --resort-white: var(--yada-white);
+    --resort-accent: var(--yada-accent);
+    --resort-accent-hover: var(--yada-accent-hover);
+    --resort-text: var(--yada-text);
+    --resort-text-secondary: var(--yada-text-secondary);
+
     --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
     --ease-in-expo: cubic-bezier(0.7, 0, 0.84, 0);
     --ease-elastic: cubic-bezier(0.68, -0.55, 0.265, 1.55);
@@ -52,75 +66,78 @@
   * {
     @apply border-border;
   }
-  
+
   html {
     font-family: 'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif;
     scroll-behavior: smooth;
   }
-  
+
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif;
   }
-  
+
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif;
+    font-family: 'Noto Serif Thai', 'Fraunces', 'IBM Plex Sans Thai', serif;
     font-weight: 600;
   }
 }
 
 @layer components {
-  /* Primary Button - Natural Green */
-  .btn-primary {
-    @apply bg-resort-primary text-white px-6 py-3 rounded-lg font-medium transition-all duration-300;
+  .font-display {
+    font-family: 'Noto Serif Thai', 'Fraunces', serif;
   }
-  
+
+  .btn-primary {
+    @apply bg-yada-primary text-white px-6 py-3 rounded-lg font-medium transition-all duration-300;
+  }
+
   .btn-primary:hover {
-    @apply bg-resort-primary-hover;
-    box-shadow: 0 4px 20px rgba(47, 93, 80, 0.3);
+    @apply bg-yada-primary-hover;
+    box-shadow: 0 4px 20px rgba(95, 138, 150, 0.28);
     transform: translateY(-1px);
   }
-  
-  /* Secondary Button - Outlined */
+
   .btn-secondary {
-    @apply bg-white text-resort-primary border-2 border-resort-primary px-6 py-3 rounded-lg font-medium transition-all duration-300;
+    @apply bg-white text-yada-primary border-2 border-yada-primary px-6 py-3 rounded-lg font-medium transition-all duration-300;
   }
-  
+
   .btn-secondary:hover {
-    @apply bg-resort-primary text-white;
+    @apply bg-yada-primary text-white;
   }
-  
-  /* Accent Button - Wood Brown (for highlights) */
+
   .btn-accent {
-    @apply bg-resort-accent text-white px-6 py-3 rounded-lg font-medium transition-all duration-300;
+    @apply bg-yada-accent text-yada-text px-6 py-3 rounded-lg font-medium transition-all duration-300;
   }
-  
+
   .btn-accent:hover {
-    @apply bg-resort-accent-hover;
-    box-shadow: 0 4px 20px rgba(194, 169, 126, 0.4);
+    @apply bg-yada-accent-hover;
+    box-shadow: 0 4px 20px rgba(212, 196, 176, 0.45);
   }
-  
-  /* Section Label - Wood Brown accent */
+
   .section-label {
-    @apply text-resort-accent text-sm font-medium tracking-wider uppercase mb-4;
+    @apply text-yada-primary text-sm font-medium tracking-wider uppercase mb-4;
   }
-  
-  /* Glass Effect for Navbar */
+
   .glass-effect {
     backdrop-filter: blur(20px);
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(253, 252, 250, 0.95);
   }
-  
-  /* Navbar scrolled with green background */
+
   .navbar-scrolled {
-    @apply bg-resort-primary shadow-lg;
+    @apply shadow-lg;
+    background: rgba(253, 252, 250, 0.98);
   }
-  
-  /* Accent underline hover effect */
+
+  .grain-overlay {
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  }
+
   .accent-underline {
     position: relative;
   }
-  
+
   .accent-underline::after {
     content: '';
     position: absolute;
@@ -128,20 +145,19 @@
     left: 50%;
     width: 0;
     height: 2px;
-    background: var(--resort-accent);
+    background: var(--yada-accent);
     transition: all 0.25s var(--ease-out-expo);
     transform: translateX(-50%);
   }
-  
+
   .accent-underline:hover::after {
     width: 100%;
   }
-  
-  /* Legacy gold-underline for compatibility */
+
   .gold-underline {
     position: relative;
   }
-  
+
   .gold-underline::after {
     content: '';
     position: absolute;
@@ -149,13 +165,46 @@
     left: 50%;
     width: 0;
     height: 2px;
-    background: var(--resort-accent);
+    background: var(--yada-accent);
     transition: all 0.25s var(--ease-out-expo);
     transform: translateX(-50%);
   }
-  
+
   .gold-underline:hover::after {
     width: 100%;
+  }
+
+  .admin-card-primary {
+    background: linear-gradient(135deg, #5F8A96 0%, #4E7580 100%);
+  }
+  .admin-card-accent {
+    background: linear-gradient(135deg, #7A9BA5 0%, #5F8A96 100%);
+  }
+  .admin-card-info {
+    background: linear-gradient(135deg, #4A7C9B 0%, #3A6278 100%);
+  }
+  .admin-card-success {
+    background: linear-gradient(135deg, #4A9B7F 0%, #3A7D66 100%);
+  }
+  .admin-card-warning {
+    background: linear-gradient(135deg, #C4B5A0 0%, #A8967E 100%);
+  }
+  .admin-card-danger {
+    background: linear-gradient(135deg, #B85C5C 0%, #9A4A4A 100%);
+  }
+
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--yada-border);
+    border-radius: 0.375rem;
+  }
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%);
+    animation: shimmer 1.5s infinite;
   }
 }
 
@@ -163,67 +212,85 @@
   .text-balance {
     text-wrap: balance;
   }
-  
+
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
-  
+
   .animate-pulse-slow {
     animation: pulse-slow 4s ease-in-out infinite;
   }
-  
+
   .animate-bounce-gentle {
     animation: bounce-gentle 2s ease-in-out infinite;
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-slide-in-right {
+    animation: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 }
 
 @keyframes float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
 }
 
 @keyframes pulse-slow {
-  0%, 100% {
-    opacity: 0.6;
-  }
-  50% {
-    opacity: 1;
-  }
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
 }
 
 @keyframes bounce-gentle {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(10px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(10px); }
 }
 
-/* Scrollbar Styling - Natural Green Theme */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #FAF9F6;
+  background: var(--yada-sand);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2F5D50;
+  background: var(--yada-primary);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #4A7C6D;
+  background: var(--yada-primary-hover);
 }
 
-/* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

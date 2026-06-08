@@ -1,8 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Users, Check, Wifi, Tv, Wind, Car, Coffee, Utensils, Bed } from 'lucide-react';
+import { prefersReducedMotion } from '@/lib/motion';
+import { buildBookingUrl } from '@/lib/bookingDraft';
+import SectionShell from '@/components/SectionShell';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,8 +13,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useRoomStore } from '@/stores/supabaseStore';
-import type { Room } from '@/stores/supabaseStore';
+import { useRoomStore } from '@/stores/store';
+import type { Room } from '@/stores/store';
+import { roomSlug } from '@/lib/roomSlug';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -85,19 +89,43 @@ const getRoomImage = (room: Room): string => {
   return '/images/room-standard.jpg';
 };
 
+type RoomFilter = 'all' | 'standard' | 'deluxe' | 'family';
+
+const FILTER_OPTIONS: { id: RoomFilter; label: string }[] = [
+  { id: 'all', label: 'ทั้งหมด' },
+  { id: 'standard', label: 'มาตรฐาน' },
+  { id: 'deluxe', label: 'ดีลักซ์' },
+  { id: 'family', label: 'แฟมิลี่' },
+];
+
+function matchesFilter(room: Room, filter: RoomFilter): boolean {
+  if (filter === 'all') return true;
+  const name = (room.name || '').toLowerCase();
+  if (filter === 'deluxe') return name.includes('deluxe');
+  if (filter === 'family') return name.includes('family') || name.includes('suite') || name.includes('villa');
+  return !name.includes('deluxe') && !name.includes('family') && !name.includes('suite') && !name.includes('villa');
+}
+
 export default function Rooms() {
   const navigate = useNavigate();
   const sectionRef = useRef<HTMLDivElement>(null);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [hoveredRoom, setHoveredRoom] = useState<string | null>(null);
+  const [roomFilter, setRoomFilter] = useState<RoomFilter>('all');
   const { rooms, fetchRooms } = useRoomStore();
+
+  const filteredRooms = useMemo(
+    () => rooms.filter((room) => matchesFilter(room, roomFilter)),
+    [rooms, roomFilter]
+  );
 
   useEffect(() => {
     fetchRooms();
   }, [fetchRooms]);
 
   useEffect(() => {
+    if (rooms.length === 0 || prefersReducedMotion()) return;
     const ctx = gsap.context(() => {
       gsap.fromTo(
         '.rooms-header',
@@ -117,16 +145,16 @@ export default function Rooms() {
 
       gsap.fromTo(
         '.room-card',
-        { y: 60, opacity: 0 },
+        { y: 40 },
         {
           y: 0,
-          opacity: 1,
           duration: 0.8,
           stagger: 0.15,
           ease: 'expo.out',
+          immediateRender: false,
           scrollTrigger: {
             trigger: '.rooms-grid',
-            start: 'top 80%',
+            start: 'top 85%',
             toggleActions: 'play none none none',
           },
         }
@@ -137,32 +165,44 @@ export default function Rooms() {
   }, [rooms]);
 
   const handleBookRoom = (room: Room) => {
-    navigate(`/booking?room=${room.id}`);
+    navigate(buildBookingUrl(room.id));
   };
 
   return (
     <section
       id="rooms"
       ref={sectionRef}
-      className="py-20 lg:py-32 bg-resort-white overflow-hidden"
+      className="overflow-hidden bg-yada-surface py-20 lg:py-32"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="rooms-header text-center mb-16">
-          <span className="text-resort-accent text-sm font-medium tracking-wider uppercase mb-2 block">
-            ห้องพักของเรา
-          </span>
-          <h2 className="text-3xl lg:text-4xl font-semibold text-resort-text mb-4">
-            เลือกห้องพักที่ใช่สำหรับคุณ
-          </h2>
-          <p className="text-resort-text-secondary max-w-2xl mx-auto">
-            ห้องพักหลากหลายสไตล์ให้เลือกสรร ตั้งแต่ห้องมาตรฐานไปจนถึงห้องแฟมิลี่สุดหรู
-          </p>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="rooms-header mb-10">
+          <SectionShell
+            centered
+            label="ห้องพักของเรา"
+            title="เลือกห้องพักที่ใช่สำหรับคุณ"
+            subtitle="ห้องพักหลากหลายสไตล์ให้เลือกสรร ตั้งแต่ห้องมาตรฐานไปจนถึงห้องแฟมิลี่สุดหรู"
+          />
         </div>
 
-        {/* Rooms Grid */}
-        <div className="rooms-grid grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {rooms.map((room) => {
+        <div className="mb-10 flex flex-wrap justify-center gap-2">
+          {FILTER_OPTIONS.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => setRoomFilter(option.id)}
+              className={`rounded-full px-5 py-2 text-sm font-medium transition ${
+                roomFilter === option.id
+                  ? 'bg-yada-primary text-white shadow-yada'
+                  : 'bg-yada-sand text-yada-text-secondary hover:bg-yada-accent/20'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="rooms-grid grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {filteredRooms.map((room) => {
             const roomType = getRoomTypeLabel(room.name || '');
             const isHovered = hoveredRoom === room.id;
             
@@ -172,23 +212,39 @@ export default function Rooms() {
             return (
               <div
                 key={room.id}
-                className="room-card group bg-resort-white rounded-xl overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300"
+                className="room-card group overflow-hidden rounded-xl border border-yada-accent/15 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-yada-primary/30 hover:shadow-yada"
                 onMouseEnter={() => setHoveredRoom(room.id)}
                 onMouseLeave={() => setHoveredRoom(null)}
               >
                 {/* Image */}
-                <div className="relative h-52 overflow-hidden bg-resort-cream">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  className="relative h-52 w-full overflow-hidden bg-yada-sand text-left"
+                  onClick={() => {
+                    setSelectedRoom(room);
+                    setDetailOpen(true);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      setSelectedRoom(room);
+                      setDetailOpen(true);
+                    }
+                  }}
+                >
                   <img
                     src={getRoomImage(room)}
                     alt={room.name_th}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     onError={(e) => {
                       e.currentTarget.src = '/images/room-standard.jpg';
                     }}
                   />
                   {/* Room type label */}
                   <div className="absolute top-4 left-4">
-                    <span className="px-3 py-1.5 bg-white/90 backdrop-blur-sm text-resort-text text-xs font-medium rounded-full">
+                    <span className="px-3 py-1.5 bg-white/90 backdrop-blur-sm text-yada-text text-xs font-medium rounded-full">
                       {roomType}
                     </span>
                   </div>
@@ -197,7 +253,8 @@ export default function Rooms() {
                   <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
                     <Button
                       onClick={() => handleBookRoom(room)}
-                      className="bg-resort-primary text-white hover:bg-resort-primary-hover px-6 py-2 rounded-full font-medium transition-all duration-300"
+                      variant="yada"
+                      className="rounded-full px-6 py-2 font-medium"
                       disabled={room.status !== 'available'}
                     >
                       จองเลย
@@ -207,7 +264,7 @@ export default function Rooms() {
 
                 {/* Content */}
                 <div className="p-5">
-                  <h3 className="text-lg font-semibold text-resort-text mb-3">
+                  <h3 className="text-lg font-semibold text-yada-text mb-3">
                     {room.name}
                   </h3>
 
@@ -222,7 +279,7 @@ export default function Rooms() {
                           if (!config) return null;
                           const Icon = config.icon;
                           return (
-                            <span key={amenityId} className="inline-flex items-center gap-1 px-2.5 py-1 bg-resort-cream text-resort-text-secondary text-xs rounded-full">
+                            <span key={amenityId} className="inline-flex items-center gap-1 px-2.5 py-1 bg-yada-sand text-yada-text-secondary text-xs rounded-full">
                               <Icon className="w-3 h-3" />
                               {config.label}
                             </span>
@@ -230,15 +287,15 @@ export default function Rooms() {
                         })
                     ) : (
                       <>
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-resort-cream text-resort-text-secondary text-xs rounded-full">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-yada-sand text-yada-text-secondary text-xs rounded-full">
                           <Wifi className="w-3 h-3" />
                           Wifi
                         </span>
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-resort-cream text-resort-text-secondary text-xs rounded-full">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-yada-sand text-yada-text-secondary text-xs rounded-full">
                           <Tv className="w-3 h-3" />
                           TV
                         </span>
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-resort-cream text-resort-text-secondary text-xs rounded-full">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-yada-sand text-yada-text-secondary text-xs rounded-full">
                           <Wind className="w-3 h-3" />
                           AC
                         </span>
@@ -249,15 +306,31 @@ export default function Rooms() {
                   {/* Price and Capacity */}
                   <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                     <div>
-                      <span className="text-xl font-bold text-resort-accent">
+                      <span className="text-xl font-bold text-yada-primary group-hover:text-yada-primary-hover transition-colors duration-200">
                         ฿{room.price?.toLocaleString()}
                       </span>
-                      <span className="text-sm text-resort-text-secondary">/คืน</span>
+                      <span className="text-sm text-yada-text-secondary">/คืน</span>
                     </div>
-                    <div className="flex items-center gap-1 text-resort-text-secondary text-sm">
+                    <div className="flex items-center gap-1 text-yada-text-secondary text-sm">
                       <Users className="w-4 h-4" />
                       <span>{room.capacity} ท่าน</span>
                     </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <Button
+                      variant="yada-outline"
+                      onClick={() => navigate(`/rooms/${roomSlug(room)}`)}
+                    >
+                      รายละเอียด
+                    </Button>
+                    <Button
+                      variant="yada"
+                      onClick={() => handleBookRoom(room)}
+                      disabled={room.status !== 'available'}
+                    >
+                      จอง
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -286,41 +359,42 @@ export default function Rooms() {
                   }}
                 />
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-3xl font-bold text-resort-accent">
+                  <span className="text-3xl font-bold text-yada-primary">
                     ฿{selectedRoom.price?.toLocaleString()}
-                    <span className="text-lg text-resort-text-secondary">/คืน</span>
+                    <span className="text-lg text-yada-text-secondary">/คืน</span>
                   </span>
                 </div>
-                <p className="text-resort-text-secondary mb-6">{selectedRoom.description_th}</p>
+                <p className="text-yada-text-secondary mb-6">{selectedRoom.description_th}</p>
                 
                 <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="p-4 bg-resort-cream rounded-xl">
-                    <Users className="w-6 h-6 mb-2 text-resort-accent" />
-                    <span className="text-sm text-resort-text-secondary">{selectedRoom.capacity} ท่าน</span>
+                  <div className="p-4 bg-yada-sand rounded-xl">
+                    <Users className="w-6 h-6 mb-2 text-yada-accent" />
+                    <span className="text-sm text-yada-text-secondary">{selectedRoom.capacity} ท่าน</span>
                   </div>
-                  <div className="p-4 bg-resort-cream rounded-xl">
-                    <span className="text-sm text-resort-text-secondary">{selectedRoom.size} ตร.ม.</span>
+                  <div className="p-4 bg-yada-sand rounded-xl">
+                    <span className="text-sm text-yada-text-secondary">{selectedRoom.size} ตร.ม.</span>
                   </div>
                 </div>
 
                 <div className="mb-6">
-                  <h4 className="font-semibold mb-3 text-resort-text">สิ่งอำนวยความสะดวก</h4>
+                  <h4 className="font-semibold mb-3 text-yada-text">สิ่งอำนวยความสะดวก</h4>
                   <div className="grid grid-cols-2 gap-2">
                     {selectedRoom.amenities?.map((amenity) => (
                       <div key={amenity} className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-resort-primary" />
-                        <span className="text-sm text-resort-text-secondary">{amenity}</span>
+                        <Check className="w-4 h-4 text-yada-primary" />
+                        <span className="text-sm text-yada-text-secondary">{amenity}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 <Button
+                  variant="yada"
+                  className="w-full py-3"
                   onClick={() => {
                     setDetailOpen(false);
-                    navigate(`/booking?room=${selectedRoom.id}`);
+                    navigate(buildBookingUrl(selectedRoom.id));
                   }}
-                  className="w-full bg-resort-primary hover:bg-resort-primary-hover text-white py-3 rounded-lg font-medium transition-all duration-300"
                   disabled={selectedRoom.status !== 'available'}
                 >
                   {selectedRoom.status === 'available' ? 'จองห้องนี้' : 'ไม่ว่าง'}

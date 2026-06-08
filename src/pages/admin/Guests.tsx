@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Search, User, Phone, Mail, History, Eye, Edit, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,14 +11,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import PageHeader from '@/components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
-import { useBookingStore } from '@/stores/supabaseStore';
-import { supabase } from '@/lib/supabase';
+import { useBookingStore } from '@/stores/store';
+import api from '@/lib/api';
 
 // Mock guests data derived from bookings
 export default function Guests() {
+  const [searchParams] = useSearchParams();
   const { bookings, fetchBookings } = useBookingStore();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [selectedGuest, setSelectedGuest] = useState<any>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   
@@ -32,6 +36,11 @@ export default function Guests() {
   useEffect(() => {
     fetchBookings();
   }, [fetchBookings]);
+
+  useEffect(() => {
+    const q = searchParams.get('search');
+    if (q) setSearchQuery(q);
+  }, [searchParams]);
 
   // Extract unique guests from bookings
   const guestsMap = new Map();
@@ -75,29 +84,29 @@ export default function Guests() {
 
   const handleSaveGuest = async () => {
     if (!editForm.name || !editForm.phone) {
-      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      toast.error('กรุณากรอกข้อมูลให้ครบถ้วน');
       return;
     }
 
     setEditLoading(true);
     try {
       // Update all bookings with this phone number
-      const { error } = await supabase
-        .from('bookings')
-        .update({
-          guest_name: editForm.name,
-          guest_phone: editForm.phone,
-          guest_email: editForm.email || null,
-        })
-        .eq('guest_phone', selectedGuest.phone);
-
-      if (error) throw error;
+      const guestBookings = selectedGuest.bookings as any[];
+      await Promise.all(
+        guestBookings.map((b: any) =>
+          api.put(`/bookings/${b.id}`, {
+            guest_name: editForm.name,
+            guest_phone: editForm.phone,
+            guest_email: editForm.email || null,
+          })
+        )
+      );
 
       setEditOpen(false);
       fetchBookings();
     } catch (error) {
       console.error('Error updating guest:', error);
-      alert('เกิดข้อผิดพลาดในการแก้ไขข้อมูลลูกค้า');
+      toast.error('เกิดข้อผิดพลาดในการแก้ไขข้อมูลลูกค้า');
     } finally {
       setEditLoading(false);
     }
@@ -105,11 +114,7 @@ export default function Guests() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-resort-text">ลูกค้า</h1>
-        <p className="text-gray-500">จัดการข้อมูลลูกค้าและประวัติการเข้าพัก</p>
-      </div>
+      <PageHeader title="ลูกค้า" subtitle="จัดการข้อมูลลูกค้าและประวัติการเข้าพัก" />
 
       {/* Search */}
       <Card>
@@ -129,20 +134,20 @@ export default function Guests() {
       {/* Guests Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredGuests.map((guest, index) => (
-          <Card key={index} className="hover:shadow-lg transition-shadow">
+          <Card key={index} className="hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 border hover:border-yada-accent/20">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-full bg-resort-accent/10 flex items-center justify-center flex-shrink-0">
-                  <User className="w-7 h-7 text-resort-accent" />
+                <div className="w-14 h-14 rounded-full bg-yada-primary/10 flex items-center justify-center flex-shrink-0 ring-2 ring-yada-primary/10">
+                  <User className="w-7 h-7 text-yada-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-lg truncate">{guest.name}</h3>
-                  <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                  <h3 className="font-bold text-lg truncate text-yada-text">{guest.name}</h3>
+                  <div className="flex items-center gap-2 text-sm text-yada-text-secondary mt-1">
                     <Phone className="w-4 h-4" />
                     <span>{guest.phone}</span>
                   </div>
                   {guest.email && (
-                    <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                    <div className="flex items-center gap-2 text-sm text-yada-text-secondary mt-1">
                       <Mail className="w-4 h-4" />
                       <span className="truncate">{guest.email}</span>
                     </div>
@@ -151,26 +156,26 @@ export default function Guests() {
               </div>
 
               <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-resort-accent">
+                <div className="text-center p-3 bg-yada-sand/50 rounded-xl">
+                  <p className="text-2xl font-bold text-yada-accent">
                     {guest.totalVisits}
                   </p>
-                  <p className="text-sm text-gray-500">ครั้งที่เข้าพัก</p>
+                  <p className="text-sm text-yada-text-secondary">ครั้งที่เข้าพัก</p>
                 </div>
-                <div className="text-center">
-                  <p className="text-lg font-medium">
+                <div className="text-center p-3 bg-yada-sand/50 rounded-xl">
+                  <p className="text-lg font-medium text-yada-text">
                     {new Date(guest.lastVisit.check_in).toLocaleDateString('th-TH', {
                       day: 'numeric',
                       month: 'short',
                     })}
                   </p>
-                  <p className="text-sm text-gray-500">เข้าพักล่าสุด</p>
+                  <p className="text-sm text-yada-text-secondary">เข้าพักล่าสุด</p>
                 </div>
               </div>
 
               <Button
                 variant="outline"
-                className="w-full mt-4"
+                className="w-full mt-4 border-yada-primary/20 text-yada-primary hover:bg-yada-primary hover:text-white transition-colors duration-200"
                 onClick={() => {
                   setSelectedGuest(guest);
                   setDetailOpen(true);
@@ -185,9 +190,12 @@ export default function Guests() {
       </div>
 
       {filteredGuests.length === 0 && (
-        <div className="text-center py-12 text-gray-500">
-          <User className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <p>ไม่พบข้อมูลลูกค้า</p>
+        <div className="text-center py-16">
+          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-yada-sand flex items-center justify-center">
+            <User className="w-10 h-10 text-yada-text-secondary" />
+          </div>
+          <p className="text-yada-text-secondary font-medium">ไม่พบข้อมูลลูกค้า</p>
+          <p className="text-sm text-yada-text-secondary/60 mt-1">ลองค้นหาด้วยคำค้นอื่น</p>
         </div>
       )}
 
@@ -212,7 +220,7 @@ export default function Guests() {
               <div className="space-y-6">
                 {/* Guest Info */}
                 <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="w-16 h-16 rounded-full bg-resort-primary flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-full bg-yada-primary flex items-center justify-center">
                     <span className="text-2xl font-bold text-white">
                       {selectedGuest.name.charAt(0)}
                     </span>
@@ -237,7 +245,7 @@ export default function Guests() {
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-4">
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <p className="text-3xl font-bold text-resort-accent">
+                    <p className="text-3xl font-bold text-yada-accent">
                       {selectedGuest.totalVisits}
                     </p>
                     <p className="text-sm text-gray-500">ครั้งที่เข้าพัก</p>
@@ -303,7 +311,7 @@ export default function Guests() {
                               </p>
                             </div>
                             <div className="text-right">
-                              <p className="font-bold text-resort-accent">
+                              <p className="font-bold text-yada-accent">
                                 ฿{booking.total_amount.toLocaleString()}
                               </p>
                               <span
@@ -381,7 +389,7 @@ export default function Guests() {
                 ยกเลิก
               </Button>
               <Button
-                className="flex-1 bg-resort-primary hover:bg-resort-primary-hover"
+                variant="yada" className="flex-1"
                 onClick={handleSaveGuest}
                 disabled={editLoading || !editForm.name || !editForm.phone}
               >

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Star, ChevronLeft, ChevronRight, Quote } from 'lucide-react';
+import { prefersReducedMotion } from '@/lib/motion';
+import SectionShell from '@/components/SectionShell';
 
 // Static testimonials data
 const testimonials = [
@@ -47,6 +49,7 @@ export default function Testimonials() {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
   useEffect(() => {
+    if (prefersReducedMotion()) return;
     const ctx = gsap.context(() => {
       gsap.fromTo(
         '.testimonials-header',
@@ -111,29 +114,28 @@ export default function Testimonials() {
     <section
       id="testimonials"
       ref={sectionRef}
-      className="py-20 lg:py-32 bg-resort-cream overflow-hidden"
+      className="overflow-hidden bg-yada-sand py-20 lg:py-32"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="testimonials-header text-center mb-16">
-          <span className="section-label">รีวิวจากลูกค้า</span>
-          <h2 className="text-3xl lg:text-4xl font-bold text-resort-text mb-4 font-serif">
-            เสียงจากผู้เข้าพัก
-          </h2>
-          <p className="text-resort-text-secondary max-w-2xl mx-auto">
-            อ่านประสบการณ์จริงจากผู้เข้าพักของเรา
-          </p>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="testimonials-header mb-16">
+          <SectionShell
+            centered
+            label="รีวิวจากลูกค้า"
+            title="เสียงจากผู้เข้าพัก"
+            subtitle="อ่านประสบการณ์จริงจากผู้เข้าพักของเรา"
+          />
         </div>
 
         {/* Testimonials Carousel */}
         <div className="testimonials-container relative max-w-4xl mx-auto">
           {/* Quote Icon */}
           <div className="absolute -top-8 left-1/2 -translate-x-1/2">
-            <Quote className="w-16 h-16 text-resort-primary/20" />
+            <Quote className="h-16 w-16 text-yada-primary/20" />
           </div>
 
           {/* Main Card */}
-          <div className="testimonial-card bg-resort-white rounded-3xl shadow-xl p-8 md:p-12 text-center relative">
+          <div className="testimonial-card relative rounded-3xl border border-transparent bg-white p-8 text-center shadow-yada transition-all duration-300 hover:-translate-y-1 hover:border-yada-accent/20 hover:shadow-xl md:p-12">
+            <div className="absolute left-1/4 right-1/4 top-0 h-1 rounded-full bg-gradient-to-r from-transparent via-yada-accent to-transparent opacity-60" />
             {/* Stars */}
             <div className="flex justify-center gap-1 mb-6">
               {[...Array(5)].map((_, i) => (
@@ -141,7 +143,7 @@ export default function Testimonials() {
                   key={i}
                   className={`w-6 h-6 ${
                     i < currentTestimonial.rating
-                      ? 'fill-resort-accent text-resort-accent'
+                      ? 'fill-yada-accent text-yada-accent'
                       : 'text-gray-300'
                   }`}
                 />
@@ -149,22 +151,22 @@ export default function Testimonials() {
             </div>
 
             {/* Quote */}
-            <p className="text-xl md:text-2xl text-resort-text leading-relaxed mb-8 font-light italic">
+            <p className="text-xl md:text-2xl text-yada-text leading-relaxed mb-8 font-light italic">
               "{currentTestimonial.comment}"
             </p>
 
             {/* Author */}
             <div className="flex items-center justify-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-resort-primary/10 flex items-center justify-center">
-                <span className="text-xl font-bold text-resort-primary">
+              <div className="w-14 h-14 rounded-full bg-yada-primary/10 flex items-center justify-center">
+                <span className="text-xl font-bold text-yada-primary">
                   {currentTestimonial.name.charAt(0)}
                 </span>
               </div>
               <div className="text-left">
-                <p className="font-semibold text-resort-text">
+                <p className="font-semibold text-yada-text">
                   {currentTestimonial.name}
                 </p>
-                <p className="text-sm text-resort-text-secondary">{currentTestimonial.location}</p>
+                <p className="text-sm text-yada-text-secondary">{currentTestimonial.location}</p>
               </div>
             </div>
           </div>
@@ -173,7 +175,7 @@ export default function Testimonials() {
           <div className="flex items-center justify-center gap-4 mt-8">
             <button
               onClick={prevTestimonial}
-              className="w-12 h-12 rounded-full bg-resort-white shadow-md flex items-center justify-center hover:bg-resort-primary hover:text-white transition-colors duration-300"
+              className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-yada-primary hover:text-white transition-colors duration-300"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -189,7 +191,7 @@ export default function Testimonials() {
                   }}
                   className={`w-3 h-3 rounded-full transition-all duration-300 ${
                     index === currentIndex
-                      ? 'bg-resort-primary w-8'
+                      ? 'bg-yada-primary w-8'
                       : 'bg-gray-300 hover:bg-gray-400'
                   }`}
                 />
@@ -198,7 +200,7 @@ export default function Testimonials() {
 
             <button
               onClick={nextTestimonial}
-              className="w-12 h-12 rounded-full bg-resort-white shadow-md flex items-center justify-center hover:bg-resort-primary hover:text-white transition-colors duration-300"
+              className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-yada-primary hover:text-white transition-colors duration-300"
             >
               <ChevronRight className="w-5 h-5" />
             </button>

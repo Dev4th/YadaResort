@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { prefersReducedMotion } from '@/lib/motion';
+import SectionShell from '@/components/SectionShell';
 import { MapPin, Phone, Mail, Clock, Facebook, Instagram, MessageCircle } from 'lucide-react';
-import { useSettingsStore } from '@/stores/supabaseStore';
+import { useSettingsStore } from '@/stores/store';
 
 // Static nearby attractions
 const nearbyAttractions = [
@@ -35,6 +37,7 @@ export default function Contact() {
   const { settings } = useSettingsStore();
 
   useEffect(() => {
+    if (prefersReducedMotion()) return;
     const ctx = gsap.context(() => {
       gsap.fromTo(
         '.contact-header',
@@ -135,25 +138,23 @@ export default function Contact() {
     <section
       id="contact"
       ref={sectionRef}
-      className="py-20 lg:py-32 bg-resort-white overflow-hidden"
+      className="overflow-hidden bg-yada-surface py-20 lg:py-32"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="contact-header text-center mb-16">
-          <span className="section-label">ที่ตั้ง</span>
-          <h2 className="text-3xl lg:text-4xl font-bold text-resort-text mb-4 font-serif">
-            มาเยือน Yada Homestay
-          </h2>
-          <p className="text-resort-text-secondary max-w-2xl mx-auto">
-            ตั้งอยู่ในจังหวัดเพชรบุรี ใกล้แหล่งท่องเที่ยวและธรรมชาติ
-          </p>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="contact-header mb-16">
+          <SectionShell
+            centered
+            label="ที่ตั้ง"
+            title="มาเยือน Yada Homestay"
+            subtitle="ตั้งอยู่ในจังหวัดเพชรบุรี ใกล้แหล่งท่องเที่ยวและธรรมชาติ"
+          />
         </div>
 
         <div className="contact-content grid lg:grid-cols-2 gap-12 items-start">
           {/* Contact Info */}
           <div className="contact-info">
-            <div className="bg-resort-cream rounded-2xl p-8">
-              <h3 className="text-xl font-bold text-resort-text mb-6 font-serif">
+            <div className="rounded-2xl bg-yada-sand p-8">
+              <h3 className="font-display mb-6 text-xl font-bold text-yada-text">
                 ข้อมูลติดต่อ
               </h3>
 
@@ -162,12 +163,12 @@ export default function Contact() {
                   const Icon = item.icon;
                   const content = (
                     <div className="flex items-start gap-4 group">
-                      <div className="w-12 h-12 rounded-full bg-resort-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-resort-primary transition-colors duration-300">
-                        <Icon className="w-5 h-5 text-resort-primary group-hover:text-white transition-colors duration-300" />
+                      <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-yada-primary/10 transition-colors duration-300 group-hover:bg-yada-primary">
+                        <Icon className="h-5 w-5 text-yada-primary transition-colors duration-300 group-hover:text-white" />
                       </div>
                       <div>
-                        <p className="text-sm text-resort-text-secondary mb-1">{item.title}</p>
-                        <p className="text-resort-text font-medium">{item.content}</p>
+                        <p className="text-sm text-yada-text-secondary mb-1">{item.title}</p>
+                        <p className="text-yada-text font-medium">{item.content}</p>
                       </div>
                     </div>
                   );
@@ -188,23 +189,29 @@ export default function Contact() {
 
               {/* Social Links */}
               <div className="mt-8 pt-8 border-t border-gray-200">
-                <p className="text-sm text-resort-text-secondary mb-4">ติดตามเรา</p>
+                <p className="text-sm text-yada-text-secondary mb-4">ติดตามเรา</p>
                 <div className="flex gap-4">
                   <a
-                    href="#"
-                    className="w-10 h-10 rounded-full bg-resort-white shadow-md flex items-center justify-center hover:bg-resort-primary hover:text-white transition-colors duration-300"
+                    href={settings.facebookUrl || '#'}
+                    target={settings.facebookUrl ? '_blank' : undefined}
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-yada-primary hover:text-white transition-colors duration-300"
                   >
                     <Facebook className="w-5 h-5" />
                   </a>
                   <a
-                    href="#"
-                    className="w-10 h-10 rounded-full bg-resort-white shadow-md flex items-center justify-center hover:bg-resort-primary hover:text-white transition-colors duration-300"
+                    href={settings.instagramUrl || '#'}
+                    target={settings.instagramUrl ? '_blank' : undefined}
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-yada-primary hover:text-white transition-colors duration-300"
                   >
                     <Instagram className="w-5 h-5" />
                   </a>
                   <a
-                    href="#"
-                    className="w-10 h-10 rounded-full bg-resort-white shadow-md flex items-center justify-center hover:bg-resort-primary hover:text-white transition-colors duration-300"
+                    href={settings.lineUrl || '#'}
+                    target={settings.lineUrl ? '_blank' : undefined}
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-yada-primary hover:text-white transition-colors duration-300"
                   >
                     <MessageCircle className="w-5 h-5" />
                   </a>
@@ -214,19 +221,19 @@ export default function Contact() {
 
             {/* Nearby Attractions */}
             <div className="mt-8">
-              <h3 className="text-xl font-bold text-resort-text mb-4 font-serif">
+              <h3 className="font-display mb-4 text-xl font-bold text-yada-text">
                 แหล่งท่องเที่ยวใกล้เคียง
               </h3>
               <div className="attractions-list grid grid-cols-2 gap-3">
                 {nearbyAttractions.map((attraction, index) => (
                   <div
                     key={index}
-                    className="attraction-item bg-resort-cream rounded-xl p-4 hover:bg-resort-primary/10 transition-colors duration-300"
+                    className="attraction-item bg-yada-sand rounded-xl p-4 hover:bg-yada-primary/10 transition-colors duration-300"
                   >
-                    <p className="font-medium text-resort-text text-sm">
+                    <p className="font-medium text-yada-text text-sm">
                       {attraction.name}
                     </p>
-                    <p className="text-xs text-resort-accent mt-1">
+                    <p className="text-xs text-yada-accent mt-1">
                       {attraction.distance}
                     </p>
                   </div>
@@ -237,7 +244,7 @@ export default function Contact() {
 
           {/* Map */}
           <div className="contact-map">
-            <div className="bg-resort-cream rounded-2xl overflow-hidden shadow-lg">
+            <div className="bg-yada-sand rounded-2xl overflow-hidden shadow-lg">
               <div className="aspect-video relative">
                 <iframe
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d288.06327731890286!2d99.92220940496846!3d13.128675584188482!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x30fd272d77c7a4e7%3A0x10c8085764cd1183!2z4LiN4Liy4LiU4Liy4LmC4Liu4Lih4Liq4LmA4LiV4Lii4LmMIHlhZGEgaG9tZSBzdGF5!5e1!3m2!1sth!2sth!4v1769802005809!5m2!1sth!2sth"
@@ -252,10 +259,10 @@ export default function Contact() {
                 />
               </div>
               <div className="p-6">
-                <h4 className="font-semibold text-resort-text mb-2">
+                <h4 className="font-semibold text-yada-text mb-2">
                   การเดินทาง
                 </h4>
-                <p className="text-sm text-resort-text-secondary">
+                <p className="text-sm text-yada-text-secondary">
                   จากกรุงเทพฯ ใช้เวลาเดินทางประมาณ 2 ชั่วโมง
                   ผ่านทางถนนเพชรเกษม (ทางหลวงหมายเลข 4)
                   เลี้ยวซ้ายที่แยกธงชัย เข้ามาประมาณ 2 กิโลเมตร

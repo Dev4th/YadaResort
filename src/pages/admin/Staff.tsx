@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash2, UserPlus, Shield, Mail, Phone, Loader2, Eye, EyeOff } from 'lucide-react';
+import { toast } from 'sonner';
+import { Search, Edit, Trash2, UserPlus, Shield, Mail, Phone, Loader2, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
@@ -19,7 +20,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { supabase } from '@/lib/supabase';
+import api from '@/lib/api';
+import { rolePermissions, roleLabels } from '@/lib/permissions';
+import PageHeader from '@/components/admin/PageHeader';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface StaffMember {
@@ -34,26 +37,11 @@ interface StaffMember {
   created_at: string;
 }
 
-const roleConfig: Record<string, { label: string; color: string }> = {
-  owner: { label: 'เจ้าของ', color: 'bg-purple-100 text-purple-700' },
-  admin: { label: 'ผู้ดูแลระบบ', color: 'bg-blue-100 text-blue-700' },
-  receptionist: { label: 'พนักงานต้อนรับ', color: 'bg-green-100 text-green-700' },
-  staff: { label: 'พนักงานทั่วไป', color: 'bg-gray-100 text-gray-700' },
-};
-
-const rolePermissions: Record<string, string[]> = {
-  owner: [
-    'dashboard_view', 'bookings_manage', 'rooms_manage', 'guests_manage',
-    'orders_manage', 'products_manage', 'reports_view', 'users_manage', 'settings_manage'
-  ],
-  admin: [
-    'dashboard_view', 'bookings_manage', 'rooms_manage', 'guests_manage',
-    'orders_manage', 'products_manage', 'reports_view', 'settings_manage'
-  ],
-  receptionist: [
-    'dashboard_view', 'bookings_manage', 'guests_manage', 'orders_manage'
-  ],
-  staff: ['dashboard_view', 'orders_manage'],
+const roleBadgeColors: Record<string, string> = {
+  owner: 'bg-purple-100 text-purple-700',
+  admin: 'bg-blue-100 text-blue-700',
+  receptionist: 'bg-green-100 text-green-700',
+  staff: 'bg-gray-100 text-gray-700',
 };
 
 export default function Staff() {
@@ -77,12 +65,7 @@ export default function Staff() {
   const fetchStaff = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const { data } = await api.get('/users');
       setStaff(data || []);
     } catch (error) {
       console.error('Error fetching staff:', error);
@@ -122,12 +105,12 @@ export default function Staff() {
 
   const handleSave = async () => {
     if (!formData.name || !formData.email || !formData.username) {
-      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      toast.error('กรุณากรอกข้อมูลให้ครบถ้วน');
       return;
     }
 
     if (!editingStaff && !formData.password) {
-      alert('กรุณาระบุรหัสผ่าน');
+      toast.error('กรุณาระบุรหัสผ่าน');
       return;
     }
 
@@ -145,33 +128,20 @@ export default function Staff() {
           role: formData.role,
           permissions,
         };
-
-        if (formData.password) {
-          updateData.password = formData.password;
-        }
-
-        const { error } = await supabase
-          .from('users')
-          .update(updateData)
-          .eq('id', editingStaff.id);
-
-        if (error) throw error;
+        if (formData.password) updateData.password = formData.password;
+        await api.put(`/users/${editingStaff.id}`, updateData);
       } else {
         // Create
-        const { error } = await supabase
-          .from('users')
-          .insert({
-            username: formData.username,
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            role: formData.role,
-            password: formData.password,
-            status: 'active',
-            permissions,
-          });
-
-        if (error) throw error;
+        await api.post('/users', {
+          username: formData.username,
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          role: formData.role,
+          password: formData.password,
+          status: 'active',
+          permissions,
+        });
       }
 
       await fetchStaff();
@@ -180,9 +150,9 @@ export default function Staff() {
     } catch (error: any) {
       console.error('Error saving staff:', error);
       if (error.code === '23505') {
-        alert('ชื่อผู้ใช้หรืออีเมลซ้ำในระบบ');
+        toast.error('ชื่อผู้ใช้หรืออีเมลซ้ำในระบบ');
       } else {
-        alert('เกิดข้อผิดพลาดในการบันทึก');
+        toast.error('เกิดข้อผิดพลาดในการบันทึก');
       }
     } finally {
       setSaving(false);
@@ -192,12 +162,7 @@ export default function Staff() {
   const handleToggleStatus = async (staffMember: StaffMember) => {
     const newStatus = staffMember.status === 'active' ? 'inactive' : 'active';
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({ status: newStatus })
-        .eq('id', staffMember.id);
-
-      if (error) throw error;
+      await api.put(`/users/${staffMember.id}`, { status: newStatus });
       await fetchStaff();
     } catch (error) {
       console.error('Error toggling status:', error);
@@ -208,16 +173,11 @@ export default function Staff() {
     if (!confirm(`ยืนยันลบพนักงาน "${staffMember.name}" ?`)) return;
 
     try {
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', staffMember.id);
-
-      if (error) throw error;
+      await api.delete(`/users/${staffMember.id}`);
       await fetchStaff();
     } catch (error) {
       console.error('Error deleting staff:', error);
-      alert('ไม่สามารถลบพนักงานได้');
+      toast.error('ไม่สามารถลบพนักงานได้');
     }
   };
 
@@ -231,27 +191,23 @@ export default function Staff() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-resort-text">พนักงาน</h1>
-          <p className="text-resort-text-secondary">จัดการบัญชีพนักงานและสิทธิ์การเข้าถึง</p>
-        </div>
-        <Button
-          onClick={() => handleOpenDialog()}
-          className="bg-resort-primary hover:bg-resort-primary-hover"
-        >
-          <UserPlus className="w-4 h-4 mr-2" />
-          เพิ่มพนักงาน
-        </Button>
-      </div>
+      <PageHeader
+        title="พนักงาน"
+        subtitle="จัดการบัญชีพนักงานและสิทธิ์การเข้าถึง"
+        actions={
+          <Button variant="yada" onClick={() => handleOpenDialog()}>
+            <UserPlus className="mr-2 h-4 w-4" />
+            เพิ่มพนักงาน
+          </Button>
+        }
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-gray-500">พนักงานทั้งหมด</p>
-            <p className="text-2xl font-bold text-resort-text">{staff.length}</p>
+            <p className="text-2xl font-bold text-yada-text">{staff.length}</p>
           </CardContent>
         </Card>
         <Card>
@@ -294,7 +250,7 @@ export default function Staff() {
       {/* Staff List */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-resort-primary" />
+          <Loader2 className="w-8 h-8 animate-spin text-yada-primary" />
         </div>
       ) : filteredStaff.length === 0 ? (
         <Card>
@@ -311,7 +267,7 @@ export default function Staff() {
                 <div className="flex items-center gap-4">
                   {/* Avatar */}
                   <Avatar className="w-12 h-12">
-                    <AvatarFallback className="bg-resort-primary/10 text-resort-primary font-semibold">
+                    <AvatarFallback className="bg-yada-primary/10 text-yada-primary font-semibold">
                       {member.name?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
@@ -319,11 +275,11 @@ export default function Staff() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-resort-text truncate">
+                      <h3 className="font-semibold text-yada-text truncate">
                         {member.name}
                       </h3>
-                      <Badge className={roleConfig[member.role]?.color || 'bg-gray-100'}>
-                        {roleConfig[member.role]?.label || member.role}
+                      <Badge className={roleBadgeColors[member.role] || 'bg-gray-100'}>
+                        {roleLabels[member.role] || member.role}
                       </Badge>
                       {member.status !== 'active' && (
                         <Badge variant="outline" className="text-red-500 border-red-500">
@@ -357,9 +313,8 @@ export default function Staff() {
                     </Button>
                     <Button
                       size="sm"
-                      variant={member.status === 'active' ? 'outline' : 'default'}
+                      variant={member.status === 'active' ? 'outline' : 'yada'}
                       onClick={() => handleToggleStatus(member)}
-                      className={member.status !== 'active' ? 'bg-green-600 hover:bg-green-700' : ''}
                     >
                       {member.status === 'active' ? 'ระงับ' : 'เปิดใช้'}
                     </Button>
@@ -464,7 +419,7 @@ export default function Staff() {
 
             {/* Permissions Preview */}
             <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-500 mb-2">สิทธิ์การใช้งาน ({roleConfig[formData.role]?.label})</p>
+              <p className="text-sm text-gray-500 mb-2">สิทธิ์การใช้งาน ({roleLabels[formData.role]})</p>
               <div className="flex flex-wrap gap-2">
                 {(rolePermissions[formData.role] || []).map(perm => (
                   <Badge key={perm} variant="outline" className="text-xs">
@@ -482,7 +437,7 @@ export default function Staff() {
             <Button 
               onClick={handleSave} 
               disabled={saving}
-              className="bg-resort-primary hover:bg-resort-primary-hover"
+              variant="yada"
             >
               {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {editingStaff ? 'บันทึก' : 'เพิ่มพนักงาน'}

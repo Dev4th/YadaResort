@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isWithinInterval, parseISO, differenceInDays } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Bed, Users, Phone, Clock, Filter } from 'lucide-react';
+import PageHeader from '@/components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +25,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useBookingStore, useRoomStore } from '@/stores/supabaseStore';
+import { useBookingStore, useRoomStore } from '@/stores/store';
 
 interface BookingWithRoom {
   id: string;
@@ -62,7 +63,7 @@ export default function BookingCalendar() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   
-  const { bookings, fetchBookings } = useBookingStore();
+  const { bookings, fetchBookings, confirmBooking, checkIn, cancelBooking } = useBookingStore();
   const { rooms, fetchRooms } = useRoomStore();
 
   useEffect(() => {
@@ -135,7 +136,7 @@ export default function BookingCalendar() {
                   <div
                     key={i}
                     className={`flex-1 min-w-[40px] p-1 text-center text-xs border-r ${
-                      isToday ? 'bg-resort-primary text-white' : 
+                      isToday ? 'bg-yada-primary text-white' : 
                       isWeekend ? 'bg-gray-100' : 'bg-gray-50'
                     }`}
                   >
@@ -266,11 +267,11 @@ export default function BookingCalendar() {
               key={i}
               className={`bg-white min-h-[100px] p-1 ${
                 !isCurrentMonth ? 'opacity-30' : ''
-              } ${isToday ? 'ring-2 ring-resort-primary ring-inset' : ''}`}
+              } ${isToday ? 'ring-2 ring-yada-primary ring-inset' : ''}`}
             >
               {isValid && (
                 <>
-                  <div className={`text-sm font-medium mb-1 ${isToday ? 'text-resort-primary' : 'text-gray-700'}`}>
+                  <div className={`text-sm font-medium mb-1 ${isToday ? 'text-yada-primary' : 'text-gray-700'}`}>
                     {format(day, 'd')}
                   </div>
                   <div className="space-y-1">
@@ -300,20 +301,17 @@ export default function BookingCalendar() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-resort-text">ปฏิทินการจอง</h1>
-          <p className="text-resort-text-secondary">ดูภาพรวมการจองทั้งหมด</p>
-        </div>
-        
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title="ปฏิทินการจอง"
+        subtitle="ดูภาพรวมการจองทั้งหมด"
+        actions={
+          <>
           {/* View Toggle */}
           <div className="flex rounded-lg border overflow-hidden">
             <Button
               variant={viewMode === 'timeline' ? 'default' : 'ghost'}
               size="sm"
-              className={viewMode === 'timeline' ? 'bg-resort-primary text-white' : ''}
+              className={viewMode === 'timeline' ? 'bg-yada-primary text-white' : ''}
               onClick={() => setViewMode('timeline')}
             >
               <Bed className="w-4 h-4 mr-1" />
@@ -322,7 +320,7 @@ export default function BookingCalendar() {
             <Button
               variant={viewMode === 'month' ? 'default' : 'ghost'}
               size="sm"
-              className={viewMode === 'month' ? 'bg-resort-primary text-white' : ''}
+              className={viewMode === 'month' ? 'bg-yada-primary text-white' : ''}
               onClick={() => setViewMode('month')}
             >
               <CalendarIcon className="w-4 h-4 mr-1" />
@@ -344,8 +342,9 @@ export default function BookingCalendar() {
               <SelectItem value="checked-out">เช็คเอาท์</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Navigation */}
       <Card>
@@ -455,7 +454,7 @@ export default function BookingCalendar() {
                   <Badge className={`${statusColors[selectedBooking.status]} text-white`}>
                     {statusLabels[selectedBooking.status]}
                   </Badge>
-                  <span className="text-lg font-bold text-resort-accent">
+                  <span className="text-lg font-bold text-yada-accent">
                     ฿{selectedBooking.total_amount?.toLocaleString()}
                   </span>
                 </div>
@@ -481,22 +480,64 @@ export default function BookingCalendar() {
                   </div>
                 </div>
 
-                <div className="pt-4 flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setDetailOpen(false)}
-                  >
-                    ปิด
-                  </Button>
-                  <Button
-                    className="flex-1 bg-resort-primary hover:bg-resort-primary-hover"
-                    onClick={() => {
-                      window.location.href = `/admin/bookings?id=${selectedBooking.id}`;
-                    }}
-                  >
-                    ดูรายละเอียด
-                  </Button>
+                <div className="pt-4 flex flex-col gap-2">
+                  {selectedBooking.status === 'pending' && (
+                    <Button
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      onClick={async () => {
+                        await confirmBooking(selectedBooking.id);
+                        await fetchBookings();
+                        setDetailOpen(false);
+                      }}
+                    >
+                      ✓ ยืนยันการจอง
+                    </Button>
+                  )}
+                  {selectedBooking.status === 'confirmed' && (
+                    <Button
+                      variant="yada"
+                      className="w-full"
+                      onClick={async () => {
+                        await checkIn(selectedBooking.id);
+                        await fetchBookings();
+                        setDetailOpen(false);
+                      }}
+                    >
+                      → Check-in
+                    </Button>
+                  )}
+                  {['pending', 'confirmed'].includes(selectedBooking.status) && (
+                    <Button
+                      variant="destructive"
+                      className="w-full"
+                      onClick={async () => {
+                        if (confirm('ยกเลิกการจองนี้ใช่หรือไม่?')) {
+                          await cancelBooking(selectedBooking.id);
+                          await fetchBookings();
+                          setDetailOpen(false);
+                        }
+                      }}
+                    >
+                      ✕ ยกเลิกการจอง
+                    </Button>
+                  )}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setDetailOpen(false)}
+                    >
+                      ปิด
+                    </Button>
+                    <Button
+                      variant="yada" className="flex-1"
+                      onClick={() => {
+                        window.location.href = `/admin/bookings?id=${selectedBooking.id}`;
+                      }}
+                    >
+                      ดูรายละเอียด
+                    </Button>
+                  </div>
                 </div>
               </div>
             </>

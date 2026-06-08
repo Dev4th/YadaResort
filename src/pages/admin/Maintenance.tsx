@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Wrench, Plus, AlertTriangle, Clock, Check, User, Calendar, Trash2 } from 'lucide-react';
+import PageHeader from '@/components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,8 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useRoomStore } from '@/stores/supabaseStore';
-import { supabase } from '@/lib/supabase';
+import { useRoomStore } from '@/stores/store';
+import api from '@/lib/api';
 
 const priorities = [
   { id: 'low', name: 'ต่ำ', color: 'bg-gray-100 text-gray-700' },
@@ -26,15 +28,10 @@ const priorities = [
   { id: 'urgent', name: 'ด่วน', color: 'bg-red-100 text-red-700' },
 ];
 
-const technicians = [
-  { id: 'tech1', name: 'ช่างสมชาย ซ่อมเก่ง' },
-  { id: 'tech2', name: 'ช่างมานะ มือฉมัง' },
-  { id: 'tech3', name: 'ช่างประสิทธิ์ ช่างซ่อม' },
-];
-
 export default function Maintenance() {
   const { rooms, fetchRooms } = useRoomStore();
   const [requests, setRequests] = useState<any[]>([]);
+  const [technicians, setTechnicians] = useState<{ id: string; name: string }[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -48,44 +45,70 @@ export default function Maintenance() {
 
   useEffect(() => {
     fetchRequests();
+    fetchRooms();
+    fetchTechnicians();
   }, []);
 
   const fetchRequests = async () => {
-    const { data } = await supabase
-      .from('maintenance_requests')
-      .select('*, rooms(name_th)')
-      .order('created_at', { ascending: false });
-    setRequests(data || []);
+    try {
+      const { data } = await api.get('/maintenance');
+      setRequests(data || []);
+    } catch (error) {
+      console.error('Error fetching maintenance requests:', error);
+    }
+  };
+
+  const fetchTechnicians = async () => {
+    try {
+      const { data } = await api.get('/users');
+      setTechnicians((data || []).filter((u: any) => u.is_active));
+    } catch (error) {
+      console.error('Error fetching technicians:', error);
+    }
   };
 
   const handleSubmit = async () => {
-    setLoading(true);
-    await supabase.from('maintenance_requests').insert({
-      ...formData,
-      cost: formData.cost ? parseFloat(formData.cost) : null,
-      status: 'pending'
-    });
-    
-    // Update room status if urgent
-    if (formData.priority === 'urgent' || formData.priority === 'high') {
-      await supabase
-        .from('rooms')
-        .update({ status: 'maintenance' })
-        .eq('id', formData.room_id);
-      await fetchRooms();
+    if (!formData.room_id || !formData.title.trim()) {
+      toast.error('กรุณาเลือกห้องพักและระบุหัวข้อการซ่อมบำรุง');
+      return;
     }
     
-    setDialogOpen(false);
-    setFormData({
-      room_id: '',
-      title: '',
-      description: '',
-      priority: 'medium',
-      assigned_to: '',
-      cost: ''
-    });
-    await fetchRequests();
-    setLoading(false);
+    const cost = formData.cost ? parseFloat(formData.cost) : null;
+    if (formData.cost && (isNaN(cost!) || cost! < 0)) {
+      toast.error('กรุณาระบุค่าใช้จ่ายให้ถูกต้อง');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      await api.post('/maintenance', {
+        ...formData,
+        cost,
+        status: 'pending'
+      });
+      
+      // Update room status if urgent
+      if (formData.priority === 'urgent' || formData.priority === 'high') {
+        await api.patch(`/rooms/${formData.room_id}/status`, { status: 'maintenance' });
+        await fetchRooms();
+      }
+      
+      setDialogOpen(false);
+      setFormData({
+        room_id: '',
+        title: '',
+        description: '',
+        priority: 'medium',
+        assigned_to: '',
+        cost: ''
+      });
+      await fetchRequests();
+    } catch (error) {
+      console.error('Error creating maintenance request:', error);
+      toast.error('เกิดข้อผิดพลาดในการสร้างรายการซ่อมบำรุง');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateStatus = async (id: string, status: string) => {
@@ -94,19 +117,13 @@ export default function Maintenance() {
       updateData.completed_at = new Date().toISOString();
     }
     
-    await supabase
-      .from('maintenance_requests')
-      .update(updateData)
-      .eq('id', id);
+    await api.patch(`/maintenance/${id}`, updateData);
     
     // Update room status back to available if completed
     if (status === 'completed') {
       const request = requests.find(r => r.id === id);
       if (request) {
-        await supabase
-          .from('rooms')
-          .update({ status: 'available' })
-          .eq('id', request.room_id);
+        await api.patch(`/rooms/${request.room_id}/status`, { status: 'available' });
         await fetchRooms();
       }
     }
@@ -116,7 +133,7 @@ export default function Maintenance() {
 
   const deleteRequest = async (id: string) => {
     if (confirm('คุณแน่ใจหรือไม่ที่จะลบรายการนี้?')) {
-      await supabase.from('maintenance_requests').delete().eq('id', id);
+      await api.delete(`/maintenance/${id}`);
       await fetchRequests();
     }
   };
@@ -150,17 +167,16 @@ export default function Maintenance() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-resort-text">ซ่อมบำรุง</h1>
-          <p className="text-gray-500">จัดการงานซ่อมบำรุงห้องพักและอุปกรณ์</p>
-        </div>
-        <Button onClick={() => setDialogOpen(true)} className="bg-resort-primary hover:bg-resort-primary-hover">
-          <Plus className="w-4 h-4 mr-2" />
-          แจ้งซ่อมใหม่
-        </Button>
-      </div>
+      <PageHeader
+        title="ซ่อมบำรุง"
+        subtitle="จัดการงานซ่อมบำรุงห้องพักและอุปกรณ์"
+        actions={
+          <Button variant="yada" onClick={() => setDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            แจ้งซ่อมใหม่
+          </Button>
+        }
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -400,7 +416,7 @@ export default function Maintenance() {
                 ยกเลิก
               </Button>
               <Button
-                className="flex-1 bg-resort-primary hover:bg-resort-primary-hover"
+                variant="yada" className="flex-1"
                 onClick={handleSubmit}
                 disabled={!formData.room_id || !formData.title || loading}
               >

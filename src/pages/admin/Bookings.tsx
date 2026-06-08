@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import AdminDataTable from '@/components/admin/AdminDataTable';
+import { toast } from 'sonner';
 import { Plus, Search, Filter, MoreHorizontal, User, Phone, Check, X, Calendar, Loader2 } from 'lucide-react';
+import PageHeader from '@/components/admin/PageHeader';
+import { bookingStatusConfig } from '@/lib/statusConfig';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,23 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format, differenceInDays } from 'date-fns';
 import { th } from 'date-fns/locale';
-import { useBookingStore, useRoomStore } from '@/stores/supabaseStore';
-
-const statusColors: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-700',
-  confirmed: 'bg-blue-100 text-blue-700',
-  'checked-in': 'bg-green-100 text-green-700',
-  'checked-out': 'bg-gray-100 text-gray-700',
-  cancelled: 'bg-red-100 text-red-700',
-};
-
-const statusLabels: Record<string, string> = {
-  pending: 'รอยืนยัน',
-  confirmed: 'ยืนยันแล้ว',
-  'checked-in': 'Check-in',
-  'checked-out': 'Check-out',
-  cancelled: 'ยกเลิก',
-};
+import { useBookingStore, useRoomStore } from '@/stores/store';
 
 // Generate booking ID from UUID
 const generateBookingId = (id: string) => {
@@ -55,9 +44,11 @@ const calculateNights = (checkIn: string, checkOut: string) => {
 };
 
 export default function Bookings() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { bookings, checkIn, checkOut, cancelBooking, confirmBooking, fetchBookings, createBooking } = useBookingStore();
   const { rooms, fetchRooms } = useRoomStore();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [highlightId, setHighlightId] = useState(searchParams.get('highlight') || '');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -82,6 +73,30 @@ export default function Bookings() {
     fetchBookings();
     fetchRooms();
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get('walkIn') === '1') {
+      setWalkInOpen(true);
+      searchParams.delete('walkIn');
+      setSearchParams(searchParams, { replace: true });
+    }
+    const q = searchParams.get('search');
+    if (q) setSearchQuery(q);
+    const hl = searchParams.get('highlight');
+    if (hl) setHighlightId(hl);
+  }, [searchParams, setSearchParams]);
+
+  useEffect(() => {
+    if (!highlightId || !bookings.length) return;
+    const booking = bookings.find((b) => b.id === highlightId);
+    if (booking) {
+      setSelectedBooking(booking);
+      setDetailOpen(true);
+      setHighlightId('');
+      searchParams.delete('highlight');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [highlightId, bookings, searchParams, setSearchParams]);
 
   const filteredBookings = bookings.filter((booking) => {
     const matchesSearch =
@@ -124,7 +139,7 @@ export default function Bookings() {
   // Walk-in booking handlers
   const handleWalkInSubmit = async () => {
     if (!walkInForm.room_id || !walkInForm.guest_name || !walkInForm.guest_phone) {
-      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      toast.error('กรุณากรอกข้อมูลให้ครบถ้วน');
       return;
     }
 
@@ -168,7 +183,7 @@ export default function Bookings() {
       fetchRooms();
     } catch (error) {
       console.error('Error creating walk-in booking:', error);
-      alert('เกิดข้อผิดพลาดในการสร้างการจอง');
+      toast.error('เกิดข้อผิดพลาดในการสร้างการจอง');
     } finally {
       setWalkInLoading(false);
     }
@@ -190,21 +205,20 @@ export default function Bookings() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-resort-text">การจองทั้งหมด</h1>
-          <p className="text-gray-500">จัดการและดูรายละเอียดการจอง</p>
-        </div>
-        <Button className="bg-resort-primary hover:bg-resort-primary-hover" onClick={() => setWalkInOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          รับจอง Walk-in
-        </Button>
-      </div>
+      <PageHeader
+        title="การจองทั้งหมด"
+        subtitle="จัดการและดูรายละเอียดการจอง"
+        actions={
+          <Button variant="yada" onClick={() => setWalkInOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            รับจอง Walk-in
+          </Button>
+        }
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card className="bg-resort-primary text-white">
+        <Card className="bg-yada-primary text-white">
           <CardContent className="p-4">
             <p className="text-3xl font-bold">{totalBookings}</p>
             <p className="text-sm opacity-80">ทั้งหมด</p>
@@ -263,89 +277,85 @@ export default function Bookings() {
         </Select>
       </div>
 
-      {/* Bookings Table */}
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">รหัสจอง</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">ลูกค้า</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">ห้องพัก</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">จำนวนคืน</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">ยอดรวม</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">สถานะ</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-600"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredBookings.map((booking) => {
-                  const room = rooms.find((r) => r.id === booking.room_id);
-                  const nights = calculateNights(booking.check_in, booking.check_out);
-                  return (
-                    <tr 
-                      key={booking.id} 
-                      className="border-b hover:bg-gray-50 cursor-pointer"
-                      onClick={() => {
-                        setSelectedBooking(booking);
-                        setDetailOpen(true);
-                      }}
-                    >
-                      <td className="px-4 py-3">
-                        <span className="font-medium text-resort-primary">
-                          {generateBookingId(booking.id)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                            <User className="w-4 h-4 text-gray-500" />
-                          </div>
-                          <div>
-                            <p className="font-medium">{booking.guest_name}</p>
-                            <p className="text-sm text-gray-500">{booking.guest_phone}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm">{room?.name_th || '-'}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm">{nights} คืน</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="font-medium">
-                          ฿{booking.total_amount?.toLocaleString() || 0}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            statusColors[booking.status]
-                          }`}
-                        >
-                          {statusLabels[booking.status]}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          {filteredBookings.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              ไม่พบข้อมูลการจอง
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <AdminDataTable
+        data={filteredBookings}
+        keyExtractor={(booking) => booking.id}
+        highlightId={highlightId || undefined}
+        emptyMessage="ไม่พบข้อมูลการจอง"
+        onRowClick={(booking) => {
+          setSelectedBooking(booking);
+          setDetailOpen(true);
+        }}
+        columns={[
+          {
+            key: 'id',
+            header: 'รหัสจอง',
+            render: (booking) => (
+              <span className="font-medium text-yada-primary">{generateBookingId(booking.id)}</span>
+            ),
+          },
+          {
+            key: 'guest',
+            header: 'ลูกค้า',
+            render: (booking) => (
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-yada-primary/10">
+                  <User className="h-4 w-4 text-yada-primary" />
+                </div>
+                <div>
+                  <p className="font-medium">{booking.guest_name}</p>
+                  <p className="text-sm text-gray-500">{booking.guest_phone}</p>
+                </div>
+              </div>
+            ),
+          },
+          {
+            key: 'room',
+            header: 'ห้องพัก',
+            render: (booking) => (
+              <span className="text-sm">{rooms.find((r) => r.id === booking.room_id)?.name_th || '-'}</span>
+            ),
+          },
+          {
+            key: 'nights',
+            header: 'จำนวนคืน',
+            render: (booking) => (
+              <span className="text-sm">{calculateNights(booking.check_in, booking.check_out)} คืน</span>
+            ),
+          },
+          {
+            key: 'total',
+            header: 'ยอดรวม',
+            render: (booking) => (
+              <span className="font-medium">฿{booking.total_amount?.toLocaleString() || 0}</span>
+            ),
+          },
+          {
+            key: 'status',
+            header: 'สถานะ',
+            render: (booking) => (
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-medium ${
+                  bookingStatusConfig[booking.status as keyof typeof bookingStatusConfig]?.color ||
+                  bookingStatusConfig.pending.color
+                }`}
+              >
+                {bookingStatusConfig[booking.status as keyof typeof bookingStatusConfig]?.label || booking.status}
+              </span>
+            ),
+          },
+          {
+            key: 'actions',
+            header: '',
+            className: 'text-right',
+            render: () => (
+              <Button variant="ghost" size="sm">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            ),
+          },
+        ]}
+      />
 
       {/* Booking Detail Dialog */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
@@ -360,12 +370,12 @@ export default function Bookings() {
               <div className="space-y-4 mt-2">
                 {/* Guest Info */}
                 <div className="flex items-center gap-4 pb-4 border-b">
-                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-                    <User className="w-6 h-6 text-gray-500" />
+                  <div className="w-12 h-12 rounded-full bg-yada-primary/10 flex items-center justify-center ring-2 ring-yada-primary/10">
+                    <User className="w-6 h-6 text-yada-primary" />
                   </div>
                   <div>
-                    <p className="font-semibold text-lg">{selectedBooking.guest_name}</p>
-                    <div className="flex items-center gap-1 text-gray-500 text-sm">
+                    <p className="font-semibold text-lg text-yada-text">{selectedBooking.guest_name}</p>
+                    <div className="flex items-center gap-1 text-yada-text-secondary text-sm">
                       <Phone className="w-3 h-3" />
                       <span>{selectedBooking.guest_phone}</span>
                     </div>
@@ -374,30 +384,30 @@ export default function Bookings() {
 
                 {/* Booking Info */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1">ห้องพัก</p>
-                    <p className="font-medium">
+                  <div className="p-3 bg-yada-sand rounded-lg">
+                    <p className="text-xs text-yada-text-secondary mb-1">ห้องพัก</p>
+                    <p className="font-medium text-yada-text">
                       {rooms.find((r) => r.id === selectedBooking.room_id)?.name_th || '-'}
                     </p>
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1">จำนวนคืน</p>
-                    <p className="font-medium">
+                  <div className="p-3 bg-yada-sand rounded-lg">
+                    <p className="text-xs text-yada-text-secondary mb-1">จำนวนคืน</p>
+                    <p className="font-medium text-yada-text">
                       {calculateNights(selectedBooking.check_in, selectedBooking.check_out)} คืน
                     </p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1">Check-in</p>
-                    <p className="font-medium">
+                  <div className="p-3 bg-yada-sand rounded-lg">
+                    <p className="text-xs text-yada-text-secondary mb-1">Check-in</p>
+                    <p className="font-medium text-yada-text">
                       {new Date(selectedBooking.check_in).toLocaleDateString('th-TH')}
                     </p>
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1">Check-out</p>
-                    <p className="font-medium">
+                  <div className="p-3 bg-yada-sand rounded-lg">
+                    <p className="text-xs text-yada-text-secondary mb-1">Check-out</p>
+                    <p className="font-medium text-yada-text">
                       {new Date(selectedBooking.check_out).toLocaleDateString('th-TH')}
                     </p>
                   </div>
@@ -420,8 +430,14 @@ export default function Bookings() {
                 {/* Status */}
                 <div className="flex items-center justify-between pt-2 border-t">
                   <span className="text-gray-600">สถานะ</span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[selectedBooking.status]}`}>
-                    {statusLabels[selectedBooking.status]}
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-medium ${
+                      bookingStatusConfig[selectedBooking.status as keyof typeof bookingStatusConfig]?.color ||
+                      bookingStatusConfig.pending.color
+                    }`}
+                  >
+                    {bookingStatusConfig[selectedBooking.status as keyof typeof bookingStatusConfig]?.label ||
+                      selectedBooking.status}
                   </span>
                 </div>
 
@@ -432,7 +448,7 @@ export default function Bookings() {
                     <div className="grid grid-cols-2 gap-2">
                       <Button
                         onClick={() => handleConfirm(selectedBooking)}
-                        className="bg-resort-primary hover:bg-resort-primary-hover"
+                        variant="yada"
                       >
                         <Check className="w-4 h-4 mr-2" />
                         ยืนยันการจอง
@@ -452,7 +468,7 @@ export default function Bookings() {
                   {selectedBooking.status === 'confirmed' && (
                     <Button
                       onClick={() => handleCheckIn(selectedBooking)}
-                      className="w-full bg-resort-primary hover:bg-resort-primary-hover"
+                      variant="yada" className="w-full"
                     >
                       <Check className="w-4 h-4 mr-2" />
                       Check-in
@@ -463,7 +479,7 @@ export default function Bookings() {
                   {selectedBooking.status === 'checked-in' && (
                     <Button
                       onClick={() => handleCheckOut(selectedBooking)}
-                      className="w-full bg-resort-primary hover:bg-resort-primary-hover"
+                      variant="yada" className="w-full"
                     >
                       <Check className="w-4 h-4 mr-2" />
                       Check-out
@@ -631,14 +647,14 @@ export default function Bookings() {
 
             {/* Summary */}
             {walkInForm.room_id && walkInNights > 0 && (
-              <div className="p-4 bg-resort-cream rounded-lg">
+              <div className="p-4 bg-yada-sand rounded-lg">
                 <div className="flex justify-between mb-2">
                   <span>จำนวนคืน</span>
                   <span>{walkInNights} คืน</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold">
                   <span>ยอดรวม</span>
-                  <span className="text-resort-accent">฿{walkInTotal.toLocaleString()}</span>
+                  <span className="text-yada-accent">฿{walkInTotal.toLocaleString()}</span>
                 </div>
               </div>
             )}
@@ -653,7 +669,7 @@ export default function Bookings() {
                 ยกเลิก
               </Button>
               <Button
-                className="flex-1 bg-resort-primary hover:bg-resort-primary-hover"
+                variant="yada" className="flex-1"
                 onClick={handleWalkInSubmit}
                 disabled={walkInLoading || !walkInForm.room_id || !walkInForm.guest_name || !walkInForm.guest_phone}
               >

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Plus, AlertTriangle, Search } from 'lucide-react';
+import { toast } from 'sonner';
+import { Plus, AlertTriangle, Search, Edit } from 'lucide-react';
+import PageHeader from '@/components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,8 +19,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useProductStore } from '@/stores/supabaseStore';
-import { supabase } from '@/lib/supabase';
+import { useProductStore } from '@/stores/store';
+import api from '@/lib/api';
 
 const categories = [
   { id: 'beverage', name: 'เครื่องดื่ม' },
@@ -52,23 +54,29 @@ export default function Inventory() {
     reason: ''
   });
 
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    name_th: '',
+    category: 'beverage',
+    price: '',
+    cost: '',
+    unit: 'piece'
+  });
+
   useEffect(() => {
     fetchProducts();
     fetchTransactions();
   }, []);
 
   const fetchTransactions = async () => {
-    const { data } = await supabase
-      .from('inventory_transactions')
-      .select('*, products(name_th)')
-      .order('created_at', { ascending: false })
-      .limit(50);
+    const { data } = await api.get('/inventory');
     setTransactions(data || []);
   };
 
   const handleSubmit = async () => {
     setLoading(true);
-    await supabase.from('products').insert({
+    await api.post('/products', {
       ...formData,
       price: parseFloat(formData.price),
       cost: parseFloat(formData.cost),
@@ -93,12 +101,11 @@ export default function Inventory() {
     if (!selectedProduct) return;
     
     setLoading(true);
-    await supabase.rpc('adjust_stock', {
-      p_product_id: selectedProduct.id,
-      p_quantity: adjustData.quantity,
-      p_type: adjustData.type,
-      p_reason: adjustData.reason,
-      p_created_by: 'admin'
+    await api.post('/inventory', {
+      product_id: selectedProduct.id,
+      quantity: adjustData.quantity,
+      type: adjustData.type,
+      reason: adjustData.reason,
     });
     
     setAdjustDialogOpen(false);
@@ -109,11 +116,40 @@ export default function Inventory() {
   };
 
   const toggleActive = async (product: any) => {
-    await supabase
-      .from('products')
-      .update({ is_active: !product.is_active })
-      .eq('id', product.id);
+    await api.put(`/products/${product.id}`, { is_active: !product.is_active });
     await fetchProducts();
+  };
+
+  const handleOpenEdit = (product: any) => {
+    setSelectedProduct(product);
+    setEditFormData({
+      name: product.name || '',
+      name_th: product.name_th || '',
+      category: product.category || 'beverage',
+      price: String(product.price || ''),
+      cost: String(product.cost || ''),
+      unit: product.unit || 'piece',
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = async () => {
+    if (!selectedProduct) return;
+    setLoading(true);
+    try {
+      await api.put(`/products/${selectedProduct.id}`, {
+        ...editFormData,
+        price: parseFloat(editFormData.price),
+        cost: parseFloat(editFormData.cost),
+      });
+      setEditDialogOpen(false);
+      await fetchProducts();
+    } catch (error) {
+      console.error('Error updating product:', error);
+      toast.error('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredProducts = products.filter(p =>
@@ -125,17 +161,16 @@ export default function Inventory() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-resort-text">คลังสินค้า</h1>
-          <p className="text-gray-500">จัดการสต็อกสินค้าและวัตถุดิบ</p>
-        </div>
-        <Button onClick={() => setDialogOpen(true)} className="bg-resort-primary hover:bg-resort-primary-hover">
-          <Plus className="w-4 h-4 mr-2" />
-          เพิ่มสินค้า
-        </Button>
-      </div>
+      <PageHeader
+        title="คลังสินค้า"
+        subtitle="จัดการสต็อกสินค้าและวัตถุดิบ"
+        actions={
+          <Button variant="yada" onClick={() => setDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            เพิ่มสินค้า
+          </Button>
+        }
+      />
 
       {/* Low Stock Alert */}
       {lowStockProducts.length > 0 && (
@@ -207,6 +242,14 @@ export default function Inventory() {
                   </div>
                   
                   <div className="flex gap-2 mt-4">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleOpenEdit(product)}
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      แก้ไข
+                    </Button>
                     <Button
                       size="sm"
                       variant="outline"
@@ -343,7 +386,7 @@ export default function Inventory() {
                 ยกเลิก
               </Button>
               <Button
-                className="flex-1 bg-resort-primary hover:bg-resort-primary-hover"
+                variant="yada" className="flex-1"
                 onClick={handleSubmit}
                 disabled={!formData.name_th || !formData.price || loading}
               >
@@ -405,9 +448,86 @@ export default function Inventory() {
                 ยกเลิก
               </Button>
               <Button
-                className="flex-1 bg-resort-primary hover:bg-resort-primary-hover"
+                variant="yada" className="flex-1"
                 onClick={handleAdjust}
                 disabled={adjustData.quantity === 0 || loading}
+              >
+                {loading ? 'กำลังบันทึก...' : 'บันทึก'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Edit Product Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>แก้ไขสินค้า</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">ชื่อ (ไทย)</label>
+              <Input
+                value={editFormData.name_th}
+                onChange={(e) => setEditFormData({ ...editFormData, name_th: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">ชื่อ (อังกฤษ)</label>
+              <Input
+                value={editFormData.name}
+                onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">หมวดหมู่</label>
+                <Select
+                  value={editFormData.category}
+                  onValueChange={(value) => setEditFormData({ ...editFormData, category: value })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {categories.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">หน่วย</label>
+                <Input
+                  value={editFormData.unit}
+                  onChange={(e) => setEditFormData({ ...editFormData, unit: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">ราคาขาย</label>
+                <Input
+                  type="number"
+                  value={editFormData.price}
+                  onChange={(e) => setEditFormData({ ...editFormData, price: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">ต้นทุน</label>
+                <Input
+                  type="number"
+                  value={editFormData.cost}
+                  onChange={(e) => setEditFormData({ ...editFormData, cost: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 pt-4">
+              <Button variant="outline" className="flex-1" onClick={() => setEditDialogOpen(false)}>
+                ยกเลิก
+              </Button>
+              <Button
+                variant="yada" className="flex-1"
+                onClick={handleEditSubmit}
+                disabled={!editFormData.name_th || loading}
               >
                 {loading ? 'กำลังบันทึก...' : 'บันทึก'}
               </Button>

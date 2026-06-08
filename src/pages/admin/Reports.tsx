@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Calendar, TrendingUp, Users, Bed, Coffee, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { Calendar, TrendingUp, Users, Bed, Coffee, Download, FileSpreadsheet } from 'lucide-react';
+import PageHeader from '@/components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,8 +17,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useBookingStore, useRoomStore, useOrderStore, useDashboardStore, useProductStore } from '@/stores/supabaseStore';
-import { supabase } from '@/lib/supabase';
+import { useBookingStore, useRoomStore, useOrderStore, useDashboardStore, useProductStore } from '@/stores/store';
+import api from '@/lib/api';
 import {
   BarChart,
   Bar,
@@ -35,7 +36,7 @@ import {
 import { format, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, subDays } from 'date-fns';
 import { th } from 'date-fns/locale';
 
-const COLORS = ['#2F5D50', '#4ade80', '#60a5fa', '#f87171', '#a78bfa'];
+const COLORS = ['#5F8A96', '#D4C4B0', '#8FB0BA', '#f87171', '#2A4349'];
 
 export default function Reports() {
   const { bookings, fetchBookings } = useBookingStore();
@@ -46,6 +47,7 @@ export default function Reports() {
   const [period, setPeriod] = useState('month');
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  void loading;
 
   useEffect(() => {
     const loadData = async () => {
@@ -57,48 +59,85 @@ export default function Reports() {
         fetchProducts(),
         fetchStats(),
       ]);
-      await fetchRevenueData();
+      await fetchRevenueData(period);
       setLoading(false);
     };
     loadData();
-  }, [fetchBookings, fetchRooms, fetchOrders, fetchProducts, fetchStats]);
+  }, [fetchBookings, fetchRooms, fetchOrders, fetchProducts, fetchStats, period]);
 
   // Fetch revenue data from payments
-  const fetchRevenueData = async () => {
+  const fetchRevenueData = async (activePeriod = 'month') => {
     const monthlyData: any[] = [];
     const now = new Date();
     
-    for (let i = 5; i >= 0; i--) {
-      const monthDate = subMonths(now, i);
-      const monthStart = startOfMonth(monthDate);
-      const monthEnd = endOfMonth(monthDate);
+    let intervals: Array<{ date: Date; label: string }> = [];
+    
+    if (activePeriod === 'today') {
+      // Hourly breakdown for today (8 hours)
+      for (let h = 8; h <= 20; h += 2) {
+        const d = new Date(now);
+        d.setHours(h, 0, 0, 0);
+        intervals.push({ date: d, label: `${h}:00` });
+      }
+    } else if (activePeriod === 'week') {
+      // Daily for last 7 days
+      for (let i = 6; i >= 0; i--) {
+        const d = subDays(now, i);
+        intervals.push({ date: d, label: format(d, 'E', { locale: th }) });
+      }
+    } else if (activePeriod === 'year') {
+      // Monthly for last 12 months
+      for (let i = 11; i >= 0; i--) {
+        const d = subMonths(now, i);
+        intervals.push({ date: d, label: format(d, 'MMM', { locale: th }) });
+      }
+    } else {
+      // Default 'month': last 6 months
+      for (let i = 5; i >= 0; i--) {
+        const d = subMonths(now, i);
+        intervals.push({ date: d, label: format(d, 'MMM', { locale: th }) });
+      }
+    }
+    
+    for (const { date, label } of intervals) {
+      let dateFrom: Date;
+      let dateTo: Date;
       
-      // Get room revenue from bookings
-      const { data: roomPayments } = await supabase
-        .from('payments')
-        .select('amount, booking_id')
-        .gte('created_at', monthStart.toISOString())
-        .lte('created_at', monthEnd.toISOString())
-        .eq('status', 'completed')
-        .not('booking_id', 'is', null);
+      if (activePeriod === 'today') {
+        dateFrom = new Date(date);
+        dateTo = new Date(date);
+        dateTo.setHours(dateTo.getHours() + 2);
+      } else if (activePeriod === 'week') {
+        dateFrom = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0);
+        dateTo = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59);
+      } else {
+        const monthDate = date;
+        dateFrom = startOfMonth(monthDate);
+        dateTo = endOfMonth(monthDate);
+      }
       
-      // Get F&B revenue from orders
-      const { data: fnbPayments } = await supabase
-        .from('payments')
-        .select('amount, order_id')
-        .gte('created_at', monthStart.toISOString())
-        .lte('created_at', monthEnd.toISOString())
-        .eq('status', 'completed')
-        .not('order_id', 'is', null);
-      
-      const roomRevenue = roomPayments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
-      const fnbRevenue = fnbPayments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
-      
-      monthlyData.push({
-        name: format(monthDate, 'MMM', { locale: th }),
-        room: roomRevenue,
-        fnb: fnbRevenue,
-      });
+      try {
+        const { data: allPayments } = await api.get('/payments', {
+          params: {
+            dateFrom: dateFrom.toISOString(),
+            dateTo: dateTo.toISOString(),
+          },
+        });
+
+        const payments: any[] = allPayments || [];
+        const completedPayments = payments.filter((p: any) => p.status === 'completed');
+
+        const roomRevenue = completedPayments
+          .filter((p: any) => p.booking_id)
+          .reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+        const fnbRevenue = completedPayments
+          .filter((p: any) => p.order_id)
+          .reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+        
+        monthlyData.push({ name: label, room: roomRevenue, fnb: fnbRevenue });
+      } catch {
+        monthlyData.push({ name: label, room: 0, fnb: 0 });
+      }
     }
     
     setRevenueData(monthlyData);
@@ -234,13 +273,11 @@ export default function Reports() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-resort-text">รายงาน</h1>
-          <p className="text-gray-500">วิเคราะห์ข้อมูลและสถิติการดำเนินงาน</p>
-        </div>
-        <div className="flex gap-3">
+      <PageHeader
+        title="รายงาน"
+        subtitle="วิเคราะห์ข้อมูลและสถิติการดำเนินงาน"
+        actions={
+          <>
           <Select value={period} onValueChange={setPeriod}>
             <SelectTrigger className="w-40">
               <Calendar className="w-4 h-4 mr-2" />
@@ -279,8 +316,9 @@ export default function Reports() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -288,13 +326,13 @@ export default function Reports() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-resort-accent">
+                <p className="text-2xl font-bold text-yada-accent">
                   ฿{stats.monthlyRevenue.toLocaleString()}
                 </p>
                 <p className="text-sm text-gray-500">รายได้รวม</p>
               </div>
-              <div className="w-10 h-10 rounded-lg bg-resort-accent/10 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-resort-accent" />
+              <div className="w-10 h-10 rounded-lg bg-yada-accent/10 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-yada-accent" />
               </div>
             </div>
           </CardContent>
@@ -368,7 +406,7 @@ export default function Reports() {
                     <Tooltip
                       formatter={(value: number) => `฿${value.toLocaleString()}`}
                     />
-                    <Bar dataKey="room" name="ห้องพัก" fill="#2F5D50" />
+                    <Bar dataKey="room" name="ห้องพัก" fill="#5F8A96" />
                     <Bar dataKey="fnb" name="F&B" fill="#4ade80" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -391,9 +429,9 @@ export default function Reports() {
                     <Line
                       type="monotone"
                       dataKey="rate"
-                      stroke="#2F5D50"
+                      stroke="#5F8A96"
                       strokeWidth={2}
-                      dot={{ fill: '#2F5D50' }}
+                      dot={{ fill: '#5F8A96' }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -447,7 +485,7 @@ export default function Reports() {
                     className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                   >
                     <div className="flex items-center gap-4">
-                      <span className="w-8 h-8 rounded-full bg-resort-primary text-white flex items-center justify-center font-bold">
+                      <span className="w-8 h-8 rounded-full bg-yada-primary text-white flex items-center justify-center font-bold">
                         {index + 1}
                       </span>
                       <div>
@@ -457,7 +495,7 @@ export default function Reports() {
                         </p>
                       </div>
                     </div>
-                    <p className="font-bold text-resort-accent">
+                    <p className="font-bold text-yada-accent">
                       ฿{product.revenue.toLocaleString()}
                     </p>
                   </div>

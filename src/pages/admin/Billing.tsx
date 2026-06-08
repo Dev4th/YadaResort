@@ -1,14 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, CreditCard, FileText, Printer, Check, Download, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { Search, CreditCard, FileText, Printer, Check, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import PageHeader from '@/components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { paymentStatusConfig } from '@/lib/statusConfig';
 import {
   Select,
   SelectContent,
@@ -16,13 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useBookingStore, useRoomStore, useOrderStore, useSettingsStore } from '@/stores/supabaseStore';
-import { supabase } from '@/lib/supabase';
+import { useBookingStore, useRoomStore, useOrderStore, useSettingsStore } from '@/stores/store';
+import api from '@/lib/api';
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
 
 export default function Billing() {
-  const { bookings, fetchBookings, updateBookingStatus } = useBookingStore();
+  const { bookings, fetchBookings } = useBookingStore();
   const { rooms, fetchRooms } = useRoomStore();
   const { orders, fetchOrders } = useOrderStore();
   const { settings } = useSettingsStore();
@@ -40,52 +44,91 @@ export default function Billing() {
     fetchOrders();
   }, [fetchBookings, fetchRooms, fetchOrders]);
 
-  // Get active bookings (checked-in or confirmed)
-  const activeBookings = bookings.filter(
-    (b) =>
-      (b.status === 'checked-in' || b.status === 'confirmed') &&
-      (b.guest_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        b.guest_phone?.includes(searchQuery))
-  );
-
   const getBookingOrders = (bookingId: string) => {
     return orders.filter((o) => o.booking_id === bookingId);
   };
 
-  const calculateStay = (checkIn: Date, checkOut: Date) => {
+  const calculateStay = (checkIn: Date | string, checkOut: Date | string) => {
     const diffTime = new Date(checkOut).getTime() - new Date(checkIn).getTime();
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
+  const buildBill = (booking: (typeof bookings)[0]) => {
+    const room = rooms.find((r) => r.id === booking.room_id);
+    const bookingOrders = getBookingOrders(booking.id);
+    const orderTotal = bookingOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+    const nights = calculateStay(booking.check_in, booking.check_out);
+    const roomTotal = Number(booking.total_amount || 0) || Number(room?.price || 0) * nights;
+    return {
+      ...booking,
+      room,
+      nights,
+      roomTotal,
+      orderTotal,
+      grandTotal: roomTotal + orderTotal,
+      orders: bookingOrders,
+    };
+  };
+
+  const matchesSearch = (b: (typeof bookings)[0]) =>
+    !searchQuery ||
+    b.guest_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    b.guest_phone?.includes(searchQuery);
+
+  const unpaidBookings = bookings.filter(
+    (b) =>
+      ['checked-in', 'confirmed', 'checked-out'].includes(b.status) &&
+      b.payment_status !== 'paid' &&
+      matchesSearch(b)
+  );
+
+  const paidBookings = bookings.filter(
+    (b) =>
+      ['checked-in', 'confirmed', 'checked-out'].includes(b.status) &&
+      b.payment_status === 'paid' &&
+      matchesSearch(b)
+  );
+
   // Handle payment
   const handlePayment = async () => {
     if (!selectedBooking) return;
-    
+
+    const apiMethod = paymentMethod === 'credit' ? 'card' : paymentMethod;
+    const methodLabel =
+      apiMethod === 'cash'
+        ? 'เงินสด'
+        : apiMethod === 'transfer'
+          ? 'โอนเงิน'
+          : apiMethod === 'promptpay'
+            ? 'พร้อมเพย์'
+            : 'บัตรเครดิต';
+
     setProcessing(true);
     try {
-      // Create payment record
-      await supabase.from('payments').insert({
+      await api.post('/payments', {
         booking_id: selectedBooking.id,
-        amount: selectedBooking.grandTotal,
-        method: paymentMethod,
+        amount: Number(selectedBooking.grandTotal),
+        method: apiMethod,
         status: 'completed',
-        notes: `ชำระเงินโดย ${paymentMethod === 'cash' ? 'เงินสด' : paymentMethod === 'transfer' ? 'โอนเงิน' : 'บัตรเครดิต'}`
+        notes: `ชำระเงินโดย ${methodLabel}`,
       });
 
-      // Update booking payment status
-      await supabase
-        .from('bookings')
-        .update({ payment_status: 'paid', payment_method: paymentMethod })
-        .eq('id', selectedBooking.id);
+      await api.patch(`/bookings/${selectedBooking.id}/status`, {
+        payment_status: 'paid',
+        payment_method: apiMethod,
+      });
 
-      // Refresh data
-      fetchBookings();
+      await Promise.all([fetchBookings(), fetchOrders()]);
       setPaymentOpen(false);
       setDetailOpen(false);
-      alert('บันทึกการชำระเงินสำเร็จ');
-    } catch (error) {
+      setSelectedBooking(null);
+      toast.success(`บันทึกการชำระเงิน ฿${Number(selectedBooking.grandTotal).toLocaleString()} สำเร็จ`);
+    } catch (error: unknown) {
       console.error('Payment error:', error);
-      alert('เกิดข้อผิดพลาด กรุณาลองใหม่');
+      const message =
+        (error as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+        'เกิดข้อผิดพลาด กรุณาลองใหม่';
+      toast.error(message);
     } finally {
       setProcessing(false);
     }
@@ -137,11 +180,7 @@ export default function Billing() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-resort-text">การเงิน</h1>
-        <p className="text-gray-500">จัดการการชำระเงินและออกใบเสร็จ</p>
-      </div>
+      <PageHeader title="การเงิน" subtitle="จัดการการชำระเงินและออกใบเสร็จ" />
 
       {/* Search */}
       <Card>
@@ -158,15 +197,10 @@ export default function Billing() {
         </CardContent>
       </Card>
 
-      {/* Bookings List */}
+      {/* Unpaid */}
       <div className="grid gap-4">
-        {activeBookings.map((booking) => {
-          const room = rooms.find((r) => r.id === booking.room_id);
-          const bookingOrders = getBookingOrders(booking.id);
-          const orderTotal = bookingOrders.reduce((sum, o) => sum + o.total, 0);
-          const nights = calculateStay(booking.check_in, booking.check_out);
-          const roomTotal = room ? room.price * nights : 0;
-          const grandTotal = roomTotal + orderTotal;
+        {unpaidBookings.map((booking) => {
+          const bill = buildBill(booking);
 
           return (
             <Card key={booking.id} className="hover:shadow-lg transition-shadow">
@@ -179,16 +213,31 @@ export default function Billing() {
                         className={`px-2 py-1 rounded-full text-xs font-medium ${
                           booking.status === 'checked-in'
                             ? 'bg-green-100 text-green-700'
-                            : 'bg-blue-100 text-blue-700'
+                            : booking.status === 'checked-out'
+                              ? 'bg-gray-100 text-gray-700'
+                              : 'bg-blue-100 text-blue-700'
                         }`}
                       >
-                        {booking.status === 'checked-in' ? 'เข้าพักอยู่' : 'ยืนยันแล้ว'}
+                        {booking.status === 'checked-in'
+                          ? 'เข้าพักอยู่'
+                          : booking.status === 'checked-out'
+                            ? 'คืนห้องแล้ว'
+                            : 'ยืนยันแล้ว'}
+                      </span>
+                      <span
+                        className={`rounded-full px-2 py-1 text-xs font-medium ${
+                          paymentStatusConfig[booking.payment_status as keyof typeof paymentStatusConfig]
+                            ?.color || paymentStatusConfig.pending.color
+                        }`}
+                      >
+                        {paymentStatusConfig[booking.payment_status as keyof typeof paymentStatusConfig]
+                          ?.label || 'รอชำระ'}
                       </span>
                     </div>
                     <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                      <span>{room?.name_th}</span>
+                      <span>{bill.room?.name_th}</span>
                       <span>•</span>
-                      <span>{nights} คืน</span>
+                      <span>{bill.nights} คืน</span>
                       <span>•</span>
                       <span>
                         {new Date(booking.check_in).toLocaleDateString('th-TH')} -{' '}
@@ -200,8 +249,8 @@ export default function Billing() {
                   <div className="flex items-center gap-6">
                     <div className="text-right">
                       <p className="text-sm text-gray-500">ยอดรวม</p>
-                      <p className="text-xl font-bold text-resort-accent">
-                        ฿{grandTotal.toLocaleString()}
+                      <p className="text-xl font-bold text-yada-accent">
+                        ฿{bill.grandTotal.toLocaleString()}
                       </p>
                     </div>
                     <div className="flex gap-2">
@@ -209,15 +258,7 @@ export default function Billing() {
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          setSelectedBooking({
-                            ...booking,
-                            room,
-                            nights,
-                            roomTotal,
-                            orderTotal,
-                            grandTotal,
-                            orders: bookingOrders,
-                          });
+                          setSelectedBooking(bill);
                           setDetailOpen(true);
                         }}
                       >
@@ -226,17 +267,9 @@ export default function Billing() {
                       </Button>
                       <Button
                         size="sm"
-                        className="bg-resort-primary hover:bg-resort-primary-hover"
+                        variant="yada"
                         onClick={() => {
-                          setSelectedBooking({
-                            ...booking,
-                            room,
-                            nights,
-                            roomTotal,
-                            orderTotal,
-                            grandTotal,
-                            orders: bookingOrders,
-                          });
+                          setSelectedBooking(bill);
                           setPaymentOpen(true);
                         }}
                       >
@@ -251,13 +284,39 @@ export default function Billing() {
           );
         })}
 
-        {activeBookings.length === 0 && (
+        {unpaidBookings.length === 0 && (
           <div className="text-center py-12 text-gray-500">
-            <CreditCard className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <p>ไม่พบรายการที่ต้องชำระเงิน</p>
+            <CreditCard className="mx-auto mb-4 h-16 w-16 text-gray-300" />
+            <p>ไม่มีรายการค้างชำระ</p>
           </div>
         )}
       </div>
+
+      {paidBookings.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-yada-text">ชำระแล้วล่าสุด</h2>
+          <div className="grid gap-3">
+            {paidBookings.slice(0, 5).map((booking) => {
+              const bill = buildBill(booking);
+              return (
+                <Card key={booking.id} className="border-emerald-100 bg-emerald-50/40">
+                  <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+                    <div>
+                      <p className="font-medium">{booking.guest_name}</p>
+                      <p className="text-sm text-gray-500">
+                        {bill.room?.name_th} · ฿{bill.grandTotal.toLocaleString()}
+                      </p>
+                    </div>
+                    <span className={`rounded-full px-3 py-1 text-xs font-medium ${paymentStatusConfig.paid.color}`}>
+                      ชำระแล้ว
+                    </span>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Bill Detail Dialog */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
@@ -266,13 +325,14 @@ export default function Billing() {
             <>
               <DialogHeader>
                 <DialogTitle>ใบแจ้งหนี้ / ใบเสร็จ</DialogTitle>
+                <DialogDescription>รายละเอียดค่าห้องและบริการเพิ่มเติม</DialogDescription>
               </DialogHeader>
               
               {/* Printable Content */}
               <div ref={printRef} className="space-y-6">
                 {/* Header */}
                 <div className="header text-center border-b pb-4">
-                  <h1 className="text-2xl font-bold font-serif">{settings.name || 'Yada Homestay'}</h1>
+                  <h1 className="text-2xl font-bold font-serif">{settings.hotelName || 'Yada Homestay'}</h1>
                   <p className="text-gray-500">{settings.address || '80 ธงชัย ต.ธงชัย อ.เมือง จ.เพชรบุรี 76000'}</p>
                   <p className="text-gray-500">โทร: {settings.phone || '081-234-5678'}</p>
                   {settings.taxId && <p className="text-gray-500 text-sm">เลขประจำตัวผู้เสียภาษี: {settings.taxId}</p>}
@@ -347,7 +407,7 @@ export default function Billing() {
                 <div className="total-row border-t-2 pt-4">
                   <div className="flex justify-between text-lg font-bold">
                     <span>รวมทั้งสิ้น</span>
-                    <span className="text-resort-accent">
+                    <span className="text-yada-accent">
                       ฿{selectedBooking.grandTotal.toLocaleString()}
                     </span>
                   </div>
@@ -384,7 +444,7 @@ export default function Billing() {
                 </Button>
                 {selectedBooking.payment_status !== 'paid' && (
                   <Button 
-                    className="flex-1 bg-resort-primary hover:bg-resort-primary-hover"
+                    variant="yada" className="flex-1"
                     onClick={() => {
                       setDetailOpen(false);
                       setPaymentOpen(true);
@@ -407,6 +467,7 @@ export default function Billing() {
             <>
               <DialogHeader>
                 <DialogTitle>ชำระเงิน</DialogTitle>
+                <DialogDescription>เลือกวิธีชำระแล้วกดยืนยันเพื่อบันทึกและออกใบเสร็จ</DialogDescription>
               </DialogHeader>
               <div className="space-y-6">
                 {/* Summary */}
@@ -416,7 +477,7 @@ export default function Billing() {
                       <p className="font-medium">{selectedBooking.guest_name}</p>
                       <p className="text-sm text-gray-500">{selectedBooking.room?.name_th}</p>
                     </div>
-                    <p className="text-2xl font-bold text-resort-accent">
+                    <p className="text-2xl font-bold text-yada-accent">
                       ฿{selectedBooking.grandTotal?.toLocaleString()}
                     </p>
                   </div>
@@ -448,7 +509,8 @@ export default function Billing() {
                     ยกเลิก
                   </Button>
                   <Button 
-                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    variant="yada"
+                    className="flex-1"
                     onClick={handlePayment}
                     disabled={processing}
                   >

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase, getRooms, getBookings, getProducts, getOrders, getDashboardStats, getGuests, type Database } from '@/lib/supabase';
+import { getRooms, getBookings, getProducts, getOrders, getDashboardStats, getGuests, type Database } from '@/lib/supabase';
+import api from '@/lib/api';
 
 // Types
 export type Room = Database['public']['Tables']['rooms']['Row'];
@@ -47,24 +48,16 @@ export const useRoomStore = create<RoomState>((set, get) => ({
     }
   },
   
-  getAvailableRooms: async (_checkIn?: string, _checkOut?: string) => {
-    const { data, error } = await supabase
-      .from('rooms')
-      .select('*')
-      .eq('status', 'available');
-    
-    if (error) throw error;
+  getAvailableRooms: async (checkIn?: string, checkOut?: string) => {
+    const params: Record<string, string> = {};
+    if (checkIn) params.checkIn = checkIn;
+    if (checkOut) params.checkOut = checkOut;
+    const { data } = await api.get('/rooms/available', { params });
     return data || [];
   },
   
   updateRoomStatus: async (id: string, status: Room['status']) => {
-    const { error } = await supabase
-      .from('rooms')
-      .update({ status })
-      .eq('id', id);
-    
-    if (error) throw error;
-    
+    await api.patch(`/rooms/${id}/status`, { status });
     set(state => ({
       rooms: state.rooms.map(r => r.id === id ? { ...r, status } : r)
     }));
@@ -107,26 +100,13 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   },
   
   createBooking: async (bookingData) => {
-    const { data, error } = await supabase
-      .from('bookings')
-      .insert(bookingData)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    
+    const { data } = await api.post('/bookings', bookingData);
     set(state => ({ bookings: [data, ...state.bookings] }));
     return data;
   },
   
   updateBookingStatus: async (id: string, status: Booking['status']) => {
-    const { error } = await supabase
-      .from('bookings')
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq('id', id);
-    
-    if (error) throw error;
-    
+    await api.patch(`/bookings/${id}/status`, { status });
     set(state => ({
       bookings: state.bookings.map(b => b.id === id ? { ...b, status } : b)
     }));
@@ -139,10 +119,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     await get().updateBookingStatus(id, 'checked-in');
     
     // Update room status to occupied
-    await supabase
-      .from('rooms')
-      .update({ status: 'occupied' })
-      .eq('id', booking.room_id);
+    await api.patch(`/rooms/${booking.room_id}/status`, { status: 'occupied' });
   },
   
   confirmBooking: async (id: string) => {
@@ -156,10 +133,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     await get().updateBookingStatus(id, 'checked-out');
     
     // Update room status to cleaning
-    await supabase
-      .from('rooms')
-      .update({ status: 'cleaning' })
-      .eq('id', booking.room_id);
+    await api.patch(`/rooms/${booking.room_id}/status`, { status: 'cleaning' });
   },
   
   cancelBooking: async (id: string) => {
@@ -169,10 +143,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     await get().updateBookingStatus(id, 'cancelled');
     
     // Update room status to available
-    await supabase
-      .from('rooms')
-      .update({ status: 'available' })
-      .eq('id', booking.room_id);
+    await api.patch(`/rooms/${booking.room_id}/status`, { status: 'available' });
   },
   
   getBookingById: (id: string) => get().bookings.find(b => b.id === id),
@@ -226,13 +197,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
     get().products.filter(p => p.category === category && p.is_active),
   
   updateStock: async (id: string, quantity: number) => {
-    const { error } = await supabase.rpc('update_stock', {
-      p_product_id: id,
-      p_quantity: quantity
-    });
-    
-    if (error) throw error;
-    
+    await api.patch(`/products/${id}/stock`, { quantity });
     await get().fetchProducts();
   },
   
@@ -268,34 +233,13 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   },
   
   createOrder: async (orderData) => {
-    const { data, error } = await supabase
-      .from('orders')
-      .insert(orderData)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    
-    // Update product stock
-    for (const item of orderData.items) {
-      await supabase.rpc('decrease_stock', {
-        p_product_id: item.product_id,
-        p_quantity: item.quantity
-      });
-    }
-    
+    const { data } = await api.post('/orders', orderData);
     set(state => ({ orders: [data, ...state.orders] }));
     return data;
   },
   
   updateOrderStatus: async (id: string, status: Order['status']) => {
-    const { error } = await supabase
-      .from('orders')
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq('id', id);
-    
-    if (error) throw error;
-    
+    await api.patch(`/orders/${id}/status`, { status });
     set(state => ({
       orders: state.orders.map(o => o.id === id ? { ...o, status } : o)
     }));
@@ -333,14 +277,7 @@ export const useGuestStore = create<GuestState>((set, get) => ({
   },
   
   upsertGuest: async (guestData) => {
-    const { data, error } = await supabase
-      .from('guests')
-      .upsert(guestData, { onConflict: 'phone' })
-      .select()
-      .single();
-    
-    if (error) throw error;
-    
+    const { data } = await api.post('/guests', guestData);
     set(state => {
       const exists = state.guests.find(g => g.phone === guestData.phone);
       if (exists) {
@@ -348,7 +285,6 @@ export const useGuestStore = create<GuestState>((set, get) => ({
       }
       return { guests: [data, ...state.guests] };
     });
-    
     return data;
   },
   
@@ -418,52 +354,19 @@ export const useAuthStore = create<AuthState>()(
       login: async (username: string, password: string) => {
         set({ loading: true, error: null });
         try {
-          // Try RPC function first (for hashed passwords)
-          const { data: rpcData, error: rpcError } = await supabase
-            .rpc('simple_login', { p_username: username, p_password: password });
-          
-          if (!rpcError && rpcData && rpcData.length > 0) {
-            const userData = rpcData[0];
-            set({
-              user: userData,
-              session: { access_token: 'local-session', user: userData },
-              isAuthenticated: true,
-              loading: false,
-              error: null
-            });
-            return true;
-          }
-          
-          // Fallback to simple query (for plain text passwords during migration)
-          const { data: userData, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('username', username)
-            .eq('status', 'active')
-            .single();
-          
-          if (error || !userData) {
-            set({ loading: false, error: 'ไม่พบผู้ใช้งานนี้' });
-            return false;
-          }
-          
-          // Simple password check (for migration period)
-          if (userData.password !== password) {
-            set({ loading: false, error: 'รหัสผ่านไม่ถูกต้อง' });
-            return false;
-          }
-          
+          const { data } = await api.post('/auth/login', { username, password });
+          const { token, user: userData } = data;
           set({
             user: userData,
-            session: { access_token: 'local-session', user: userData },
+            session: { access_token: token, user: userData },
             isAuthenticated: true,
             loading: false,
-            error: null
+            error: null,
           });
-          
           return true;
-        } catch (error: any) {
-          set({ loading: false, error: error.message || 'เกิดข้อผิดพลาด' });
+        } catch (err: any) {
+          const msg = err.response?.data?.error || err.message || 'เกิดข้อผิดพลาด';
+          set({ loading: false, error: msg });
           return false;
         }
       },
@@ -478,27 +381,17 @@ export const useAuthStore = create<AuthState>()(
       },
       
       checkSession: async () => {
-        // Check if session exists in persisted state
         const { user, session } = get();
-        if (user && session) {
-          // Verify user still exists and is active
-          const { data: userData, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-          
-          if (error || !userData || userData.status !== 'active') {
-            set({
-              user: null,
-              session: null,
-              isAuthenticated: false
-            });
-          } else {
-            set({
-              user: userData,
-              isAuthenticated: true
-            });
+        if (user && session?.access_token && session.access_token !== 'local-session') {
+          try {
+            const { data: userData } = await api.get('/auth/me');
+            if (!userData || userData.status !== 'active') {
+              set({ user: null, session: null, isAuthenticated: false });
+            } else {
+              set({ user: userData, isAuthenticated: true });
+            }
+          } catch {
+            set({ user: null, session: null, isAuthenticated: false });
           }
         }
       },
@@ -512,7 +405,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated })
+      partialize: (state) => ({ user: state.user, session: state.session, isAuthenticated: state.isAuthenticated })
     }
   )
 );
@@ -570,6 +463,20 @@ export interface ResortSettings {
   promptPayNumber: string;
   promptPayName: string;
   qrCodeUrl: string;
+  
+  // การแจ้งเตือน
+  notifications: {
+    emailNewBooking: boolean;
+    emailCheckIn: boolean;
+    emailCheckOut: boolean;
+    pushNewOrder: boolean;
+    pushLowStock: boolean;
+  };
+  
+  // Social Media
+  facebookUrl: string;
+  instagramUrl: string;
+  lineUrl: string;
 }
 
 interface SettingsState {
@@ -604,6 +511,16 @@ const defaultSettings: ResortSettings = {
   promptPayNumber: '081-234-5678',
   promptPayName: 'ญาดาโฮมสเตย์',
   qrCodeUrl: '',
+  notifications: {
+    emailNewBooking: true,
+    emailCheckIn: true,
+    emailCheckOut: false,
+    pushNewOrder: true,
+    pushLowStock: true,
+  },
+  facebookUrl: '',
+  instagramUrl: '',
+  lineUrl: '',
 };
 
 export const useSettingsStore = create(
@@ -624,26 +541,8 @@ export const useSettingsStore = create(
         set({ loading: true });
         try {
           const { settings } = get();
-          
-          // Try to upsert settings
-          const { error } = await supabase
-            .from('settings')
-            .upsert({ 
-              id: 'main', 
-              data: settings,
-              updated_at: new Date().toISOString()
-            });
-          
-          if (error) {
-            // If table doesn't exist, just save to localStorage (persist will handle)
-            if (error.code === '42P01') {
-              console.log('Settings table not found, using localStorage only');
-            } else {
-              console.error('Save settings error:', error);
-            }
-          } else {
-            console.log('Settings saved to database');
-          }
+          await api.put('/settings', settings);
+          console.log('Settings saved to database');
         } catch (error) {
           console.error('Save settings error:', error);
         } finally {
@@ -654,17 +553,12 @@ export const useSettingsStore = create(
       loadSettings: async () => {
         set({ loading: true });
         try {
-          const { data, error } = await supabase
-            .from('settings')
-            .select('data')
-            .eq('id', 'main')
-            .single();
-          
-          if (data && !error) {
-            set({ settings: { ...defaultSettings, ...data.data } });
+          const { data } = await api.get('/settings');
+          if (data && Object.keys(data).length > 0) {
+            set({ settings: { ...defaultSettings, ...data } });
             console.log('Settings loaded from database');
           }
-        } catch (error) {
+        } catch {
           console.log('Using localStorage settings');
         } finally {
           set({ loading: false });

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Sparkles, Check, Clock, AlertCircle, User, Calendar, CheckCircle, Trash2 } from 'lucide-react';
+import PageHeader from '@/components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -9,8 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useRoomStore } from '@/stores/supabaseStore';
-import { supabase } from '@/lib/supabase';
+import { useRoomStore } from '@/stores/store';
+import api from '@/lib/api';
 
 // Cleaning task type from database
 interface CleaningTask {
@@ -43,39 +45,23 @@ export default function RoomCleaning() {
     fetchStaff();
   }, []);
 
-  // Fetch cleaning tasks from Supabase
+  // Fetch cleaning tasks
   const fetchCleaningTasks = async () => {
     try {
-      const { data, error } = await supabase
-        .from('room_cleaning')
-        .select(`
-          *,
-          room:rooms(name, name_th),
-          assigned_user:users!room_cleaning_assigned_to_fkey(name)
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
+      const { data } = await api.get('/room-cleaning');
       setCleaningTasks(data || []);
     } catch (error) {
       console.error('Error fetching cleaning tasks:', error);
     }
   };
 
-  // Fetch staff from users table
+  // Fetch staff from users
   const fetchStaff = async () => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, name')
-        .in('role', ['staff', 'receptionist', 'admin', 'owner'])
-        .eq('is_active', true);
-      
-      if (error) throw error;
-      setCleaningStaff(data || []);
+      const { data } = await api.get('/users');
+      setCleaningStaff((data || []).filter((u: any) => u.is_active));
     } catch (error) {
       console.error('Error fetching staff:', error);
-      // Fallback to default staff if fetch fails
       setCleaningStaff([
         { id: 'staff1', name: 'สมศรี' },
         { id: 'staff2', name: 'ประเสริฐ' },
@@ -88,22 +74,27 @@ export default function RoomCleaning() {
 
   // มอบหมายงาน
   const assignTask = async (room: any, staffId: string) => {
+    // Prevent duplicate: check if an active task already exists for this room
+    const existingTask = cleaningTasks.find(
+      t => t.room_id === room.id && t.status !== 'completed' && t.status !== 'inspected'
+    );
+    if (existingTask) {
+      toast.error(`ห้อง ${room.name} มีงานทำความสะอาดอยู่แล้ว`);
+      return;
+    }
+    
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('room_cleaning')
-        .insert({
-          room_id: room.id,
-          status: 'in_progress',
-          assigned_to: staffId,
-          started_at: new Date().toISOString(),
-        });
-      
-      if (error) throw error;
+      await api.post('/room-cleaning', {
+        room_id: room.id,
+        status: 'in_progress',
+        assigned_to: staffId,
+        started_at: new Date().toISOString(),
+      });
       await fetchCleaningTasks();
     } catch (error) {
       console.error('Error assigning task:', error);
-      alert('เกิดข้อผิดพลาดในการมอบหมายงาน');
+      toast.error('เกิดข้อผิดพลาดในการมอบหมายงาน');
     } finally {
       setLoading(false);
     }
@@ -113,19 +104,14 @@ export default function RoomCleaning() {
   const completeCleaning = async (taskId: string) => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('room_cleaning')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString(),
-        })
-        .eq('id', taskId);
-      
-      if (error) throw error;
+      await api.patch(`/room-cleaning/${taskId}`, {
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+      });
       await fetchCleaningTasks();
     } catch (error) {
       console.error('Error completing task:', error);
-      alert('เกิดข้อผิดพลาด');
+      toast.error('เกิดข้อผิดพลาด');
     } finally {
       setLoading(false);
     }
@@ -138,22 +124,13 @@ export default function RoomCleaning() {
     
     if (task) {
       try {
-        // Update cleaning task status
-        const { error: taskError } = await supabase
-          .from('room_cleaning')
-          .update({ status: 'inspected' })
-          .eq('id', taskId);
-        
-        if (taskError) throw taskError;
-        
-        // Update room status to available
+        await api.patch(`/room-cleaning/${taskId}`, { status: 'inspected' });
         await updateRoomStatus(task.room_id, 'available');
-        
         await fetchCleaningTasks();
         await fetchRooms();
       } catch (error) {
         console.error('Error inspecting room:', error);
-        alert('เกิดข้อผิดพลาด');
+        toast.error('เกิดข้อผิดพลาด');
       }
     }
     setLoading(false);
@@ -163,12 +140,8 @@ export default function RoomCleaning() {
   const clearCompletedTasks = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('room_cleaning')
-        .delete()
-        .eq('status', 'inspected');
-      
-      if (error) throw error;
+      const inspectedTasks = cleaningTasks.filter(t => t.status === 'inspected');
+      await Promise.all(inspectedTasks.map(t => api.delete(`/room-cleaning/${t.id}`)));
       await fetchCleaningTasks();
     } catch (error) {
       console.error('Error clearing tasks:', error);
@@ -180,12 +153,7 @@ export default function RoomCleaning() {
   // ลบงานเดี่ยว
   const deleteTask = async (taskId: string) => {
     try {
-      const { error } = await supabase
-        .from('room_cleaning')
-        .delete()
-        .eq('id', taskId);
-      
-      if (error) throw error;
+      await api.delete(`/room-cleaning/${taskId}`);
       await fetchCleaningTasks();
     } catch (error) {
       console.error('Error deleting task:', error);
@@ -222,11 +190,7 @@ export default function RoomCleaning() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-resort-text">ทำความสะอาดห้องพัก</h1>
-        <p className="text-gray-500">จัดการงานทำความสะอาดห้องพัก</p>
-      </div>
+      <PageHeader title="ทำความสะอาดห้องพัก" subtitle="จัดการงานทำความสะอาดห้องพัก" />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -340,8 +304,8 @@ export default function RoomCleaning() {
                 className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-resort-accent/10 flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-resort-accent" />
+                  <div className="w-10 h-10 rounded-full bg-yada-accent/10 flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-yada-accent" />
                   </div>
                   <div>
                     <p className="font-medium">{task.room?.name_th || 'ไม่ระบุห้อง'}</p>
@@ -366,7 +330,7 @@ export default function RoomCleaning() {
                   {task.status === 'in_progress' && (
                     <Button
                       size="sm"
-                      className="bg-green-600 hover:bg-green-700"
+                      variant="yada"
                       onClick={() => completeCleaning(task.id)}
                       disabled={loading}
                     >

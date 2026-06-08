@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Calendar, User, Bed, Check, X, CreditCard, Banknote, QrCode } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import PageHeader from '@/components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -9,7 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useBookingStore, useRoomStore } from '@/stores/supabaseStore';
+import { useBookingStore, useRoomStore } from '@/stores/store';
+import api from '@/lib/api';
 
 const paymentMethods = [
   { id: 'cash', name: 'เงินสด', icon: Banknote },
@@ -69,8 +71,17 @@ export default function POS() {
     setPaymentDialogOpen(true);
   };
 
-  const confirmAction = () => {
+  const confirmAction = async () => {
     if (!selectedBooking || !actionType) return;
+
+    try {
+      // Record selected payment method
+      await api.patch(`/bookings/${selectedBooking.id}/status`, {
+        payment_method: selectedPayment,
+      });
+    } catch (error) {
+      console.error('Error recording payment method:', error);
+    }
 
     if (actionType === 'checkin') {
       checkIn(selectedBooking.id);
@@ -85,11 +96,7 @@ export default function POS() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-resort-text">Check-in / Check-out</h1>
-        <p className="text-gray-500">จัดการการเข้าพักและออกของลูกค้า</p>
-      </div>
+      <PageHeader title="Check-in / Check-out" subtitle="จัดการการเข้าพักและออกของลูกค้า" />
 
       {/* Search */}
       <Card>
@@ -255,7 +262,7 @@ export default function POS() {
                 <p className="text-sm text-gray-500">
                   {rooms.find((r) => r.id === selectedBooking.room_id)?.name_th}
                 </p>
-                <p className="text-xl font-bold text-resort-accent mt-2">
+                <p className="text-xl font-bold text-yada-accent mt-2">
                   ฿{selectedBooking.total_amount.toLocaleString()}
                 </p>
               </div>
@@ -271,7 +278,7 @@ export default function POS() {
                         onClick={() => setSelectedPayment(method.id)}
                         className={`p-3 rounded-lg border-2 transition-colors ${
                           selectedPayment === method.id
-                            ? 'border-resort-accent bg-resort-accent/10'
+                            ? 'border-yada-accent bg-yada-accent/10'
                             : 'border-gray-200 hover:border-gray-300'
                         }`}
                       >
@@ -292,7 +299,7 @@ export default function POS() {
                   ยกเลิก
                 </Button>
                 <Button
-                  className="flex-1 bg-resort-primary hover:bg-resort-primary-hover"
+                  variant="yada" className="flex-1"
                   onClick={confirmAction}
                 >
                   {actionType === 'checkin' ? 'ยืนยัน Check-in' : 'ยืนยัน Check-out'}

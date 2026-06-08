@@ -1,75 +1,41 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Save, UserPlus, Users, Shield, Bell, Mail, CreditCard, Building, QrCode, Plus, Trash2, Loader2, Eye, EyeOff, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { supabase } from '@/lib/supabase';
+import api from '@/lib/api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useSettingsStore } from '@/stores/supabaseStore';
+import { useSettingsStore } from '@/stores/store';
 import { THAI_BANKS } from '@/lib/promptpay';
-
-const rolePermissions: Record<string, string[]> = {
-  owner: [
-    'dashboard_view',
-    'bookings_manage',
-    'rooms_manage',
-    'guests_manage',
-    'orders_manage',
-    'products_manage',
-    'reports_view',
-    'users_manage',
-    'settings_manage',
-  ],
-  admin: [
-    'dashboard_view',
-    'bookings_manage',
-    'rooms_manage',
-    'guests_manage',
-    'orders_manage',
-    'products_manage',
-    'reports_view',
-  ],
-  receptionist: [
-    'dashboard_view',
-    'bookings_manage',
-    'guests_manage',
-    'orders_manage',
-  ],
-  staff: ['dashboard_view', 'orders_manage'],
-};
-
-const permissionLabels: Record<string, string> = {
-  dashboard_view: 'ดูแดชบอร์ด',
-  bookings_manage: 'จัดการการจอง',
-  rooms_manage: 'จัดการห้องพัก',
-  guests_manage: 'จัดการลูกค้า',
-  orders_manage: 'จัดการออเดอร์',
-  products_manage: 'จัดการสินค้า',
-  reports_view: 'ดูรายงาน',
-  users_manage: 'จัดการผู้ใช้',
-  settings_manage: 'ตั้งค่าระบบ',
-};
+import { rolePermissions, permissionLabels } from '@/lib/permissions';
+import PageHeader from '@/components/admin/PageHeader';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('general');
   const { settings, updateSettings, saveSettings, loadSettings, loading } = useSettingsStore();
   
-  const [notifications, setNotifications] = useState({
+  // Use notifications from settings store (persisted) instead of local state
+  const notifications = settings.notifications || {
     emailNewBooking: true,
     emailCheckIn: true,
     emailCheckOut: false,
     pushNewOrder: true,
     pushLowStock: true,
-  });
+  };
+  
+  const setNotifications = (newNotifications: typeof notifications) => {
+    updateSettings({ notifications: newNotifications });
+  };
 
   // User management state
   const [users, setUsers] = useState<{ id: string; name: string; email: string; role: string; username?: string }[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
+  void usersLoading;
   const [addUserOpen, setAddUserOpen] = useState(false);
   const [addUserLoading, setAddUserLoading] = useState(false);
   const [addUserForm, setAddUserForm] = useState({
@@ -90,16 +56,11 @@ export default function Settings() {
     role: 'staff',
   });
 
-  // Fetch users from Supabase
+  // Fetch users from API
   const fetchUsers = async () => {
     setUsersLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: true });
-      
-      if (error) throw error;
+      const { data } = await api.get('/users');
       setUsers(data || []);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -117,37 +78,32 @@ export default function Settings() {
   // User management handlers
   const handleAddUser = async () => {
     if (!addUserForm.name || !addUserForm.email || !addUserForm.username) {
-      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      toast.error('กรุณากรอกข้อมูลให้ครบถ้วน');
       return;
     }
     
     setAddUserLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .insert({
-          name: addUserForm.name,
-          email: addUserForm.email,
-          username: addUserForm.username,
-          role: addUserForm.role,
-          permissions: rolePermissions[addUserForm.role] || [],
-          is_active: true,
-        })
-        .select()
-        .single();
-      
-      if (error) throw error;
+      await api.post('/users', {
+        name: addUserForm.name,
+        email: addUserForm.email,
+        username: addUserForm.username,
+        role: addUserForm.role,
+        permissions: rolePermissions[addUserForm.role] || [],
+        is_active: true,
+        password: addUserForm.password || undefined,
+      });
       
       await fetchUsers();
       setAddUserOpen(false);
       setAddUserForm({ name: '', email: '', username: '', role: 'staff', password: '' });
-      alert('เพิ่มผู้ใช้งานสำเร็จ');
+      toast.success('เพิ่มผู้ใช้งานสำเร็จ');
     } catch (error: any) {
       console.error('Error adding user:', error);
-      if (error.code === '23505') {
-        alert('อีเมลหรือชื่อผู้ใช้ซ้ำในระบบ');
+      if (error.response?.status === 409 || error.response?.data?.error?.includes('unique')) {
+        toast.error('อีเมลหรือชื่อผู้ใช้ซ้ำในระบบ');
       } else {
-        alert('เกิดข้อผิดพลาดในการเพิ่มผู้ใช้งาน');
+        toast.error('เกิดข้อผิดพลาดในการเพิ่มผู้ใช้งาน');
       }
     } finally {
       setAddUserLoading(false);
@@ -167,31 +123,26 @@ export default function Settings() {
   const handleSaveUser = async () => {
     if (!selectedUser) return;
     if (!editUserForm.name || !editUserForm.email) {
-      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      toast.error('กรุณากรอกข้อมูลให้ครบถ้วน');
       return;
     }
     
     setEditUserLoading(true);
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({
-          name: editUserForm.name,
-          email: editUserForm.email,
-          role: editUserForm.role,
-          permissions: rolePermissions[editUserForm.role] || [],
-        })
-        .eq('id', selectedUser.id);
-      
-      if (error) throw error;
+      await api.put(`/users/${selectedUser.id}`, {
+        name: editUserForm.name,
+        email: editUserForm.email,
+        role: editUserForm.role,
+        permissions: rolePermissions[editUserForm.role] || [],
+      });
       
       await fetchUsers();
       setEditUserOpen(false);
       setSelectedUser(null);
-      alert('บันทึกข้อมูลผู้ใช้งานสำเร็จ');
+      toast.success('บันทึกข้อมูลผู้ใช้งานสำเร็จ');
     } catch (error) {
       console.error('Error updating user:', error);
-      alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+      toast.error('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
     } finally {
       setEditUserLoading(false);
     }
@@ -225,22 +176,21 @@ export default function Settings() {
 
   const handleSave = async () => {
     await saveSettings();
-    alert('บันทึกการตั้งค่าสำเร็จ');
+    toast.success('บันทึกการตั้งค่าสำเร็จ');
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-resort-text">ตั้งค่า</h1>
-          <p className="text-resort-text-secondary">จัดการการตั้งค่าระบบและผู้ใช้</p>
-        </div>
-        <Button onClick={handleSave} disabled={loading} className="bg-resort-primary hover:bg-resort-primary-hover transition-all duration-300">
-          {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-          {loading ? 'กำลังบันทึก...' : 'บันทึก'}
-        </Button>
-      </div>
+      <PageHeader
+        title="ตั้งค่า"
+        subtitle="จัดการการตั้งค่าระบบและผู้ใช้"
+        actions={
+          <Button variant="yada" onClick={handleSave} disabled={loading}>
+            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            {loading ? 'กำลังบันทึก...' : 'บันทึก'}
+          </Button>
+        }
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full flex-wrap h-auto">
@@ -376,6 +326,40 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Social Media</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Facebook URL</label>
+                  <Input
+                    value={settings.facebookUrl || ''}
+                    onChange={(e) => updateSettings({ facebookUrl: e.target.value })}
+                    placeholder="https://facebook.com/yadahomestay"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Instagram URL</label>
+                  <Input
+                    value={settings.instagramUrl || ''}
+                    onChange={(e) => updateSettings({ instagramUrl: e.target.value })}
+                    placeholder="https://instagram.com/yadahomestay"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Line URL</label>
+                  <Input
+                    value={settings.lineUrl || ''}
+                    onChange={(e) => updateSettings({ lineUrl: e.target.value })}
+                    placeholder="https://line.me/ti/p/~yadahomestay"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Payment Settings */}
@@ -384,7 +368,7 @@ export default function Settings() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-resort-accent" />
+                <CreditCard className="w-5 h-5 text-yada-accent" />
                 วิธีการชำระเงิน
               </CardTitle>
             </CardHeader>
@@ -411,7 +395,7 @@ export default function Settings() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <QrCode className="w-5 h-5 text-resort-accent" />
+                <QrCode className="w-5 h-5 text-yada-accent" />
                 PromptPay / QR Code
               </CardTitle>
             </CardHeader>
@@ -474,10 +458,10 @@ export default function Settings() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <Building className="w-5 h-5 text-resort-accent" />
+                <Building className="w-5 h-5 text-yada-accent" />
                 บัญชีธนาคาร
               </CardTitle>
-              <Button size="sm" onClick={addBankAccount} className="bg-resort-primary hover:bg-resort-primary-hover transition-all duration-300">
+              <Button size="sm" onClick={addBankAccount} variant="yada">
                 <Plus className="w-4 h-4 mr-2" />
                 เพิ่มบัญชี
               </Button>
@@ -560,7 +544,7 @@ export default function Settings() {
               <div className="p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
                 <div className="text-center space-y-1">
                   <h3 className="text-lg font-bold">{settings.hotelName}</h3>
-                  <p className="text-sm text-resort-accent">{settings.hotelNameTh}</p>
+                  <p className="text-sm text-yada-accent">{settings.hotelNameTh}</p>
                   <p className="text-xs text-gray-500">{settings.address}</p>
                   <p className="text-xs text-gray-500">โทร: {settings.phone}</p>
                   <p className="text-xs text-gray-500">เลขประจำตัวผู้เสียภาษี: {settings.taxId}</p>
@@ -578,7 +562,7 @@ export default function Settings() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>ผู้ใช้งานระบบ</CardTitle>
-              <Button size="sm" className="bg-resort-primary hover:bg-resort-primary-hover" onClick={() => setAddUserOpen(true)}>
+              <Button size="sm" variant="yada" onClick={() => setAddUserOpen(true)}>
                 <UserPlus className="w-4 h-4 mr-2" />
                 เพิ่มผู้ใช้
               </Button>
@@ -591,8 +575,8 @@ export default function Settings() {
                       className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-resort-accent/10 flex items-center justify-center">
-                          <Users className="w-5 h-5 text-resort-accent" />
+                        <div className="w-10 h-10 rounded-full bg-yada-accent/10 flex items-center justify-center">
+                          <Users className="w-5 h-5 text-yada-accent" />
                         </div>
                         <div>
                           <p className="font-medium">{user.name}</p>
@@ -734,7 +718,7 @@ export default function Settings() {
                 {Object.entries(rolePermissions).map(([role, permissions]) => (
                   <div key={role} className="border rounded-lg p-4">
                     <div className="flex items-center gap-3 mb-4">
-                      <Shield className="w-5 h-5 text-resort-accent" />
+                      <Shield className="w-5 h-5 text-yada-accent" />
                       <h4 className="font-semibold capitalize">
                         {role === 'owner'
                           ? 'เจ้าของ'
@@ -843,7 +827,7 @@ export default function Settings() {
               ยกเลิก
             </Button>
             <Button 
-              className="bg-resort-primary hover:bg-resort-primary-hover"
+              variant="yada"
               onClick={handleAddUser}
               disabled={addUserLoading}
             >
@@ -903,7 +887,7 @@ export default function Settings() {
               ยกเลิก
             </Button>
             <Button 
-              className="bg-resort-primary hover:bg-resort-primary-hover"
+              variant="yada"
               onClick={handleSaveUser}
               disabled={editUserLoading}
             >

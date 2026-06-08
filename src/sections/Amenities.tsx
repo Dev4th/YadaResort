@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { prefersReducedMotion } from '@/lib/motion';
+import SectionShell from '@/components/SectionShell';
 import {
   Wifi,
   Car,
@@ -37,6 +39,7 @@ export default function Amenities() {
   const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (prefersReducedMotion()) return;
     const ctx = gsap.context(() => {
       gsap.fromTo(
         '.amenities-header',
@@ -79,18 +82,16 @@ export default function Amenities() {
     <section
       id="amenities"
       ref={sectionRef}
-      className="py-20 lg:py-32 bg-resort-cream overflow-hidden"
+      className="overflow-hidden bg-yada-sand py-20 lg:py-32"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="amenities-header text-center mb-16">
-          <span className="section-label">สิ่งอำนวยความสะดวก</span>
-          <h2 className="text-3xl lg:text-4xl font-bold text-resort-text mb-4 font-serif">
-            ทุกความสะดวกสบายเพื่อคุณ
-          </h2>
-          <p className="text-resort-text-secondary max-w-2xl mx-auto">
-            เราจัดเตรียมสิ่งอำนวยความสะดวกครบครันเพื่อให้การเข้าพักของคุณสมบูรณ์แบบ
-          </p>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="amenities-header mb-16">
+          <SectionShell
+            centered
+            label="สิ่งอำนวยความสะดวก"
+            title="ทุกความสะดวกสบายเพื่อคุณ"
+            subtitle="เราจัดเตรียมสิ่งอำนวยความสะดวกครบครันเพื่อให้การเข้าพักของคุณสมบูรณ์แบบ"
+          />
         </div>
 
         {/* Amenities Grid */}
@@ -100,16 +101,16 @@ export default function Amenities() {
             return (
               <div
                 key={index}
-                className="amenity-item group bg-resort-white rounded-2xl p-6 text-center hover:shadow-xl transition-all duration-300 cursor-pointer"
+                className="amenity-item group cursor-pointer rounded-2xl border border-transparent bg-white p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:border-yada-accent/20 hover:shadow-yada"
               >
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-resort-primary/10 flex items-center justify-center group-hover:bg-resort-primary transition-colors duration-300">
-                  <Icon className="w-8 h-8 text-resort-primary group-hover:text-white transition-colors duration-300 group-hover:rotate-12 transform" />
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-yada-primary/10 transition-all duration-300 group-hover:scale-110 group-hover:bg-yada-primary">
+                  <Icon className="h-8 w-8 text-yada-primary transition-colors duration-300 group-hover:text-white" />
                 </div>
-                <h3 className="font-semibold text-resort-text mb-1">
+                <h3 className="mb-1 font-semibold text-yada-text">
                   {amenity.nameTh}
                 </h3>
-                <p className="text-xs text-resort-text-secondary mb-2">{amenity.name}</p>
-                <p className="text-sm text-resort-text-secondary">{amenity.description}</p>
+                <p className="mb-2 text-xs text-yada-text-secondary">{amenity.name}</p>
+                <p className="text-sm text-yada-text-secondary">{amenity.description}</p>
               </div>
             );
           })}

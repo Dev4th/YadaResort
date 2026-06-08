@@ -19,6 +19,10 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
+        yada: "bg-yada-primary text-white hover:bg-yada-primary-hover shadow-yada",
+        "yada-outline": "border-2 border-yada-primary text-yada-primary bg-transparent hover:bg-yada-primary hover:text-white",
+        "yada-ghost": "text-yada-primary hover:bg-yada-primary/10",
+        "yada-accent": "bg-yada-accent text-yada-text hover:bg-yada-accent-hover",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

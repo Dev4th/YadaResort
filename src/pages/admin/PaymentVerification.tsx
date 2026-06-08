@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { Check, X, Eye, Search, Filter, Clock, CheckCircle, XCircle, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -21,8 +23,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { supabase } from '@/lib/supabase';
-import { useAuthStore } from '@/stores/supabaseStore';
+import api from '@/lib/api';
+import { useAuthStore } from '@/stores/store';
+import { slipStatusConfig } from '@/lib/statusConfig';
+import PageHeader from '@/components/admin/PageHeader';
 
 interface PaymentSlip {
   id: string;
@@ -34,24 +38,23 @@ interface PaymentSlip {
   uploaded_at: string;
   verified_at: string | null;
   verified_by: string | null;
-  bookings?: {
-    id: string;
+  booking?: {
     guest_name: string;
     guest_phone: string;
     total_amount: number;
     check_in: string;
     check_out: string;
-    rooms?: {
-      number: string;
+    room?: {
+      name: string;
       name_th: string;
     };
   };
 }
 
-const statusConfig = {
-  pending: { label: 'รอตรวจสอบ', color: 'bg-yellow-100 text-yellow-700', icon: Clock },
-  approved: { label: 'อนุมัติแล้ว', color: 'bg-green-100 text-green-700', icon: CheckCircle },
-  rejected: { label: 'ปฏิเสธ', color: 'bg-red-100 text-red-700', icon: XCircle },
+const statusIcons = {
+  pending: Clock,
+  approved: CheckCircle,
+  rejected: XCircle,
 };
 
 export default function PaymentVerification() {
@@ -68,26 +71,7 @@ export default function PaymentVerification() {
   const fetchSlips = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('payment_slips')
-        .select(`
-          *,
-          bookings (
-            id,
-            guest_name,
-            guest_phone,
-            total_amount,
-            check_in,
-            check_out,
-            rooms (
-              number,
-              name_th
-            )
-          )
-        `)
-        .order('uploaded_at', { ascending: false });
-
-      if (error) throw error;
+      const { data } = await api.get('/payment-slips');
       setSlips(data || []);
     } catch (error) {
       console.error('Error fetching payment slips:', error);
@@ -103,30 +87,24 @@ export default function PaymentVerification() {
   const handleApprove = async (slip: PaymentSlip) => {
     setActionLoading(true);
     try {
-      // Update slip status
-      const { error: slipError } = await supabase
-        .from('payment_slips')
-        .update({
-          status: 'approved',
-          verified_at: new Date().toISOString(),
-          verified_by: user?.id,
-        })
-        .eq('id', slip.id);
+      await api.patch(`/payment-slips/${slip.id}`, {
+        status: 'approved',
+        verified_at: new Date().toISOString(),
+        verified_by: user?.id,
+      });
 
-      if (slipError) throw slipError;
-
-      // Update booking payment status
-      await supabase
-        .from('bookings')
-        .update({ payment_status: 'paid' })
-        .eq('id', slip.booking_id);
+      // Update booking payment status to paid
+      await api.patch(`/bookings/${slip.booking_id}/status`, {
+        payment_status: 'paid',
+      });
 
       await fetchSlips();
       setViewDialogOpen(false);
       setSelectedSlip(null);
+      toast.success('อนุมัติสลิปสำเร็จ');
     } catch (error) {
       console.error('Error approving slip:', error);
-      alert('เกิดข้อผิดพลาดในการอนุมัติ');
+      toast.error('เกิดข้อผิดพลาดในการอนุมัติ');
     } finally {
       setActionLoading(false);
     }
@@ -134,40 +112,37 @@ export default function PaymentVerification() {
 
   const handleReject = async (slip: PaymentSlip) => {
     if (!rejectReason.trim()) {
-      alert('กรุณาระบุเหตุผลในการปฏิเสธ');
+      toast.error('กรุณาระบุเหตุผลในการปฏิเสธ');
       return;
     }
 
     setActionLoading(true);
     try {
-      const { error } = await supabase
-        .from('payment_slips')
-        .update({
-          status: 'rejected',
-          notes: rejectReason,
-          verified_at: new Date().toISOString(),
-          verified_by: user?.id,
-        })
-        .eq('id', slip.id);
-
-      if (error) throw error;
+      await api.patch(`/payment-slips/${slip.id}`, {
+        status: 'rejected',
+        notes: rejectReason,
+        verified_at: new Date().toISOString(),
+        verified_by: user?.id,
+      });
 
       await fetchSlips();
       setViewDialogOpen(false);
       setSelectedSlip(null);
       setRejectReason('');
+      toast.success('ปฏิเสธสลิปแล้ว');
     } catch (error) {
       console.error('Error rejecting slip:', error);
-      alert('เกิดข้อผิดพลาดในการปฏิเสธ');
+      toast.error('เกิดข้อผิดพลาดในการปฏิเสธ');
     } finally {
       setActionLoading(false);
     }
   };
 
-  const filteredSlips = slips.filter(slip => {
-    const matchesSearch = 
-      slip.bookings?.guest_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      slip.bookings?.guest_phone?.includes(searchQuery);
+  const filteredSlips = slips.filter((slip) => {
+    const matchesSearch =
+      !searchQuery ||
+      slip.booking?.guest_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      slip.booking?.guest_phone?.includes(searchQuery);
     const matchesStatus = statusFilter === 'all' || slip.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -176,18 +151,17 @@ export default function PaymentVerification() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-resort-text">ตรวจสอบการชำระเงิน</h1>
-          <p className="text-resort-text-secondary">ตรวจสอบและอนุมัติสลิปการโอนเงิน</p>
-        </div>
-        {pendingCount > 0 && (
-          <Badge className="bg-yellow-100 text-yellow-700 text-sm py-1 px-3">
-            รอตรวจสอบ {pendingCount} รายการ
-          </Badge>
-        )}
-      </div>
+      <PageHeader
+        title="ตรวจสอบการชำระเงิน"
+        subtitle="ตรวจสอบและอนุมัติสลิปการโอนเงิน"
+        actions={
+          pendingCount > 0 ? (
+            <Badge className={slipStatusConfig.pending.color}>
+              รอตรวจสอบ {pendingCount} รายการ
+            </Badge>
+          ) : undefined
+        }
+      />
 
       {/* Filters */}
       <Card>
@@ -221,7 +195,7 @@ export default function PaymentVerification() {
       {/* Slips List */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-resort-primary" />
+          <Loader2 className="w-8 h-8 animate-spin text-yada-primary" />
         </div>
       ) : filteredSlips.length === 0 ? (
         <Card>
@@ -233,7 +207,8 @@ export default function PaymentVerification() {
       ) : (
         <div className="grid gap-4">
           {filteredSlips.map((slip) => {
-            const StatusIcon = statusConfig[slip.status].icon;
+            const status = slipStatusConfig[slip.status];
+            const StatusIcon = statusIcons[slip.status];
             return (
               <Card key={slip.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
@@ -257,23 +232,23 @@ export default function PaymentVerification() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <h3 className="font-semibold text-resort-text">
-                            {slip.bookings?.guest_name || 'ไม่ระบุชื่อ'}
+                          <h3 className="font-semibold text-yada-text">
+                            {slip.booking?.guest_name || 'ไม่ระบุชื่อ'}
                           </h3>
                           <p className="text-sm text-gray-500">
-                            {slip.bookings?.guest_phone}
+                            {slip.booking?.guest_phone}
                           </p>
                         </div>
-                        <Badge className={statusConfig[slip.status].color}>
+                        <Badge className={status.color}>
                           <StatusIcon className="w-3 h-3 mr-1" />
-                          {statusConfig[slip.status].label}
+                          {status.label}
                         </Badge>
                       </div>
                       
                       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
-                        <span>ห้อง {slip.bookings?.rooms?.number}</span>
+                        <span>{slip.booking?.room?.name_th || slip.booking?.room?.name || 'ไม่ระบุห้อง'}</span>
                         <span>•</span>
-                        <span>ยอด ฿{slip.amount?.toLocaleString()}</span>
+                        <span>ยอด ฿{Number(slip.amount || 0).toLocaleString()}</span>
                         <span>•</span>
                         <span>
                           {slip.uploaded_at && format(parseISO(slip.uploaded_at), 'd MMM yyyy HH:mm', { locale: th })}
@@ -298,7 +273,7 @@ export default function PaymentVerification() {
                         <>
                           <Button
                             size="sm"
-                            className="bg-green-600 hover:bg-green-700"
+                            variant="yada"
                             onClick={() => handleApprove(slip)}
                           >
                             <Check className="w-4 h-4" />
@@ -326,9 +301,10 @@ export default function PaymentVerification() {
 
       {/* View Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-2xl" aria-describedby={undefined}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>รายละเอียดสลิปการโอนเงิน</DialogTitle>
+            <DialogDescription>ตรวจสอบสลิปและอนุมัติหรือปฏิเสธการชำระเงิน</DialogDescription>
           </DialogHeader>
 
           {selectedSlip && (
@@ -352,33 +328,33 @@ export default function PaymentVerification() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-gray-500">ชื่อลูกค้า</p>
-                  <p className="font-medium">{selectedSlip.bookings?.guest_name}</p>
+                  <p className="font-medium">{selectedSlip.booking?.guest_name}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">เบอร์โทร</p>
-                  <p className="font-medium">{selectedSlip.bookings?.guest_phone}</p>
+                  <p className="font-medium">{selectedSlip.booking?.guest_phone}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">ห้องพัก</p>
                   <p className="font-medium">
-                    {selectedSlip.bookings?.rooms?.number} - {selectedSlip.bookings?.rooms?.name_th}
+                    {selectedSlip.booking?.room?.name_th || selectedSlip.booking?.room?.name}
                   </p>
                 </div>
                 <div>
                   <p className="text-gray-500">วันที่เข้าพัก</p>
                   <p className="font-medium">
-                    {selectedSlip.bookings?.check_in && format(parseISO(selectedSlip.bookings.check_in), 'd MMM yyyy', { locale: th })}
+                    {selectedSlip.booking?.check_in && format(parseISO(selectedSlip.booking.check_in), 'd MMM yyyy', { locale: th })}
                   </p>
                 </div>
                 <div>
                   <p className="text-gray-500">ยอดที่ต้องชำระ</p>
-                  <p className="font-medium text-resort-accent">
-                    ฿{selectedSlip.bookings?.total_amount?.toLocaleString()}
+                  <p className="font-medium text-yada-accent">
+                    ฿{Number(selectedSlip.booking?.total_amount || 0).toLocaleString()}
                   </p>
                 </div>
                 <div>
                   <p className="text-gray-500">ยอดในสลิป</p>
-                  <p className="font-medium">฿{selectedSlip.amount?.toLocaleString()}</p>
+                  <p className="font-medium">฿{Number(selectedSlip.amount || 0).toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">วันที่อัพโหลด</p>
@@ -388,8 +364,8 @@ export default function PaymentVerification() {
                 </div>
                 <div>
                   <p className="text-gray-500">สถานะ</p>
-                  <Badge className={statusConfig[selectedSlip.status].color}>
-                    {statusConfig[selectedSlip.status].label}
+                  <Badge className={slipStatusConfig[selectedSlip.status].color}>
+                    {slipStatusConfig[selectedSlip.status].label}
                   </Badge>
                 </div>
               </div>
@@ -435,7 +411,7 @@ export default function PaymentVerification() {
                   ปฏิเสธ
                 </Button>
                 <Button
-                  className="bg-green-600 hover:bg-green-700"
+                  variant="yada"
                   onClick={() => handleApprove(selectedSlip)}
                   disabled={actionLoading}
                 >
