@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import { writeFileSync } from 'fs';
+import { join } from 'path';
 import bcrypt from 'bcryptjs';
 import { Prisma, PrismaClient } from '@prisma/client';
 
@@ -464,6 +466,16 @@ async function main() {
   } else {
     console.log('ℹ️  Demo data already exists — skipped transactional seed');
   }
+
+  const seoRooms = await prisma.room.findMany({
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  });
+  writeFileSync(
+    join(__dirname, '../../public/seo-rooms.json'),
+    JSON.stringify(seoRooms, null, 2)
+  );
+  console.log(`📄 Exported ${seoRooms.length} rooms → public/seo-rooms.json`);
 
   console.log('\n🎉 Seed complete!');
   console.log('   admin / admin123');

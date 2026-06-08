@@ -2,52 +2,123 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://yadahomestay.com/</loc>
+    <lastmod>2026-06-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://yadahomestay.com/booking</loc>
+    <loc>https://yadahomestay.com/rooms</loc>
+    <lastmod>2026-06-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://yadahomestay.com/rooms</loc>
+    <loc>https://yadahomestay.com/booking</loc>
+    <lastmod>2026-06-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://yadahomestay.com/check-booking</loc>
-    <changefreq>monthly</changefreq>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
     <loc>https://yadahomestay.com/phetchaburi-homestay</loc>
-    <changefreq>monthly</changefreq>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://yadahomestay.com/family-room-phetchaburi</loc>
-    <changefreq>monthly</changefreq>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
     <loc>https://yadahomestay.com/pool-villa-phetchaburi</loc>
-    <changefreq>monthly</changefreq>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
     <loc>https://yadahomestay.com/nearby-attractions</loc>
-    <changefreq>monthly</changefreq>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://yadahomestay.com/terms</loc>
-    <changefreq>yearly</changefreq>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   <url>
     <loc>https://yadahomestay.com/privacy</loc>
-    <changefreq>yearly</changefreq>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.2</priority>
+  </url>
+  <!-- room-slugs -->
+  <url>
+    <loc>https://yadahomestay.com/rooms/standard-room-b6e92658</loc>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://yadahomestay.com/rooms/standard-room-101-259af296</loc>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://yadahomestay.com/rooms/superior-room-db1d9d87</loc>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://yadahomestay.com/rooms/superior-room-102-5af9b8ff</loc>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://yadahomestay.com/rooms/deluxe-room-244a664e</loc>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://yadahomestay.com/rooms/deluxe-room-201-459eeada</loc>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://yadahomestay.com/rooms/family-suite-1e92470f</loc>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://yadahomestay.com/rooms/family-suite-301-0b0fc7f3</loc>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://yadahomestay.com/rooms/pool-villa-401-0b94f4ce</loc>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://yadahomestay.com/rooms/pool-villa-2d184a0b</loc>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
 </urlset>

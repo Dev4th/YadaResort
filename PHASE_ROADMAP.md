@@ -10,10 +10,14 @@ Implemented:
 - `public/robots.txt`, `public/sitemap.xml`, and `public/site.webmanifest`.
 - JSON-LD for lodging/local-business context.
 - Admin routes are marked `noindex,nofollow`.
+- `VITE_SITE_URL` and `VITE_GSC_VERIFICATION` env support (see `.env.example`).
+- Absolute `og:image` URLs in `index.html`.
+- Sitemap generator with API + `public/seo-rooms.json` fallback and `lastmod`.
+- `npm run seo:export-rooms` and auto-export from `npm run db:seed`.
 
 Production checklist:
-- Replace `https://yadahomestay.com` in `src/lib/seo.tsx` and sitemap if the final domain changes.
-- Add Google Search Console and submit `/sitemap.xml`.
+- Set `VITE_SITE_URL` to the live domain before deploy.
+- Add `VITE_GSC_VERIFICATION` and submit `/sitemap.xml` in Google Search Console.
 - Replace placeholder phone/address if the official business details differ.
 
 ## Phase 2: Public Website Conversion
@@ -82,9 +86,17 @@ Implemented pages:
 - `/rooms`
 - `/rooms/:slug`
 
+Implemented enhancements:
+- FAQ + breadcrumb schema on SEO landing pages.
+- Homepage FAQ schema (`homeFaqStructuredData`).
+- Breadcrumb schema on `/rooms` and `/rooms/:slug`.
+- Post-build prerender via `scripts/prerender.mjs` (`npm run build`).
+- `netlify.toml` for static hosting + prerendered paths.
+- Richer gallery `alt` text for image SEO.
+
 Next:
 - Add long-form travel content for Phetchaburi trip planning.
-- Add FAQ and breadcrumb schema per growth page.
+- Add real review sources and `Review` schema when data is available.
 - Monitor Search Console queries and expand pages around proven impressions.
 
 ## Verification Commands
@@ -92,7 +104,9 @@ Next:
 Frontend:
 
 ```bash
-npm run build
+npm run build          # includes sitemap + prerender
+npm run build:fast     # skip prerender
+npm run seo:export-rooms
 ```
 
 Backend:

@@ -19,42 +19,42 @@ const galleryImages = [
   {
     id: 'g1',
     src: '/images/gallery-pool.jpg',
-    alt: 'สระว่ายน้ำ',
+    alt: 'สระว่ายน้ำ Yada Homestay บรรยากาศสงบในเพชรบุรี',
     category: 'pool',
     size: 'large'
   },
   {
     id: 'g2',
     src: '/images/gallery-room.jpg',
-    alt: 'ห้องพัก',
+    alt: 'ห้องพักโฮมสเตย์ Yada Homestay ตกแต่งอบอุ่น',
     category: 'rooms',
     size: 'medium'
   },
   {
     id: 'g3',
     src: '/images/gallery-garden.jpg',
-    alt: 'สวน',
+    alt: 'สวนธรรมชาติรอบที่พัก Yada Homestay เพชรบุรี',
     category: 'garden',
     size: 'small'
   },
   {
     id: 'g4',
     src: '/images/gallery-lobby.jpg',
-    alt: 'ล็อบบี้',
+    alt: 'พื้นที่ต้อนรับและล็อบบี้ Yada Homestay',
     category: 'common',
     size: 'medium'
   },
   {
     id: 'g5',
     src: '/images/gallery-breakfast.jpg',
-    alt: 'อาหารเช้า',
+    alt: 'มุมอาหารเช้าและพื้นที่รับประทานอาหาร',
     category: 'dining',
     size: 'small'
   },
   {
     id: 'g6',
     src: '/images/gallery-exterior.jpg',
-    alt: 'ภายนอก',
+    alt: 'ภายนอก Yada Homestay ที่พักเพชรบุรีท่ามกลางธรรมชาติ',
     category: 'exterior',
     size: 'large'
   }

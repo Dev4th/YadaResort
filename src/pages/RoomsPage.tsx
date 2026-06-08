@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import Rooms from '@/sections/Rooms';
 import StayReasons from '@/sections/StayReasons';
-import { Seo, lodgingStructuredData } from '@/lib/seo';
+import { Seo, breadcrumbStructuredData, lodgingStructuredData } from '@/lib/seo';
 
 export default function RoomsPage() {
   return (
@@ -12,7 +12,13 @@ export default function RoomsPage() {
         description="ดูประเภทห้องพัก Yada Homestay เพชรบุรี ทั้งห้องมาตรฐาน ห้องครอบครัว และพูลวิลล่า พร้อมราคา ความจุ สิ่งอำนวยความสะดวก และปุ่มจองออนไลน์"
         path="/rooms"
         image="/images/room-deluxe.jpg"
-        structuredData={lodgingStructuredData}
+        structuredData={[
+          lodgingStructuredData,
+          breadcrumbStructuredData([
+            { name: 'หน้าแรก', path: '/' },
+            { name: 'ห้องพัก', path: '/rooms' },
+          ]),
+        ]}
       />
       <section className="relative overflow-hidden bg-yada-dark px-4 pb-16 pt-8 text-white sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">

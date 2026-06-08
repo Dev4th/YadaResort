@@ -10,7 +10,7 @@ import Amenities from './sections/Amenities';
 import Gallery from './sections/Gallery';
 import Testimonials from './sections/Testimonials';
 import Contact from './sections/Contact';
-import { Seo, lodgingStructuredData, websiteStructuredData } from './lib/seo';
+import { Seo, homeFaqStructuredData, lodgingStructuredData, websiteStructuredData } from './lib/seo';
 import { useProductStore, useRoomStore } from './stores/store';
 
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
@@ -38,7 +38,7 @@ function LandingPage() {
         description="จองที่พักเพชรบุรีสไตล์โฮมสเตย์ที่ Yada Homestay ห้องพักสะอาด บรรยากาศสงบ ใกล้ธรรมชาติ เหมาะกับคู่รัก ครอบครัว และทริปพักผ่อน"
         path="/"
         image="/images/hero-bg.jpg"
-        structuredData={[lodgingStructuredData, websiteStructuredData]}
+        structuredData={[lodgingStructuredData, websiteStructuredData, homeFaqStructuredData]}
       />
       <Hero />
       <About />

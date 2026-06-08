@@ -1,47 +1,58 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { join } from 'path';
+import {
+  root,
+  SITE_URL,
+  STATIC_SEO_ROUTES,
+  roomSlug,
+  fetchRooms,
+  readSeoRooms,
+} from './seo-config.mjs';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..');
 const sitemapPath = join(root, 'public', 'sitemap.xml');
-const siteUrl = 'https://yadahomestay.com';
-const apiBase = process.env.VITE_API_URL || 'http://localhost:3002/api';
-
-function roomSlug(room) {
-  const base = (room.name || 'room')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-  return `${base || 'room'}-${room.id.slice(0, 8)}`;
-}
+const today = new Date().toISOString().slice(0, 10);
 
 function urlEntry(loc, priority = '0.7', changefreq = 'weekly') {
-  return `  <url>\n    <loc>${loc}</loc>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`;
+  return `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`;
 }
 
-let baseXml = readFileSync(sitemapPath, 'utf8');
-if (baseXml.includes('<!-- room-slugs -->')) {
-  baseXml = baseXml.split('<!-- room-slugs -->')[0].trimEnd();
+const priorityMap = {
+  '/': '1.0',
+  '/booking': '0.9',
+  '/rooms': '0.9',
+  '/check-booking': '0.4',
+  '/phetchaburi-homestay': '0.8',
+  '/family-room-phetchaburi': '0.75',
+  '/pool-villa-phetchaburi': '0.75',
+  '/nearby-attractions': '0.7',
+  '/terms': '0.2',
+  '/privacy': '0.2',
+};
+
+const staticEntries = STATIC_SEO_ROUTES.map((path) => {
+  const loc = path === '/' ? `${SITE_URL}/` : `${SITE_URL}${path}`;
+  return urlEntry(loc, priorityMap[path] || '0.7');
+});
+
+let rooms = await fetchRooms();
+let source = 'api';
+
+if (!rooms?.length) {
+  rooms = readSeoRooms();
+  source = rooms.length ? 'seo-rooms.json' : 'none';
 }
 
-let roomUrls = [];
-try {
-  const res = await fetch(`${apiBase}/rooms`);
-  if (res.ok) {
-    const rooms = await res.json();
-    roomUrls = (rooms || []).map((room) =>
-      urlEntry(`${siteUrl}/rooms/${roomSlug(room)}`, '0.8', 'weekly')
-    );
-  }
-} catch {
-  console.warn('[sitemap] API unavailable — keeping static URLs only');
-}
+const roomEntries = (rooms || []).map((room) =>
+  urlEntry(`${SITE_URL}/rooms/${roomSlug(room)}`, '0.8', 'weekly')
+);
 
-const roomBlock = roomUrls.length
-  ? `\n  <!-- room-slugs -->\n${roomUrls.join('\n')}\n`
-  : '';
+const output = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${staticEntries.join('\n')}
+  <!-- room-slugs -->
+${roomEntries.join('\n')}
+</urlset>
+`;
 
-const output = baseXml.replace('</urlset>', `${roomBlock}</urlset>`);
 writeFileSync(sitemapPath, output);
-console.log(`[sitemap] wrote ${roomUrls.length} room URLs`);
+console.log(`[sitemap] wrote ${staticEntries.length} static + ${roomEntries.length} room URLs (source: ${source})`);

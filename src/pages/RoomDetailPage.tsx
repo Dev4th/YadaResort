@@ -4,7 +4,7 @@ import { ArrowRight, BedDouble, Check, MapPin, Maximize2, Users } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import StayReasons from '@/sections/StayReasons';
 import { useSettingsStore } from '@/stores/store';
-import { Seo, lodgingStructuredData, SITE_URL } from '@/lib/seo';
+import { Seo, breadcrumbStructuredData, lodgingStructuredData, SITE_URL } from '@/lib/seo';
 import { buildBookingUrl } from '@/lib/bookingDraft';
 import { roomIdFromSlug } from '@/lib/roomSlug';
 import { useRoomStore } from '@/stores/store';
@@ -47,6 +47,11 @@ export default function RoomDetailPage() {
   const structuredData = room
     ? [
         lodgingStructuredData,
+        breadcrumbStructuredData([
+          { name: 'หน้าแรก', path: '/' },
+          { name: 'ห้องพัก', path: '/rooms' },
+          { name: room.name_th || room.name, path: `/rooms/${slug || ''}` },
+        ]),
         {
           '@context': 'https://schema.org',
           '@type': 'HotelRoom',

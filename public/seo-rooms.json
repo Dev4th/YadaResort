@@ -1,0 +1,12 @@
+[
+  { "id": "259af296-ff9e-485c-a86b-e0b85250fc7c", "name": "Standard Room 101" },
+  { "id": "5af9b8ff-5c88-4990-bc4f-feaf3824ac75", "name": "Superior Room 102" },
+  { "id": "459eeada-9dd1-4d17-9f02-1520918109cd", "name": "Deluxe Room 201" },
+  { "id": "0b0fc7f3-2af0-4961-b975-1048aca24ec3", "name": "Family Suite 301" },
+  { "id": "0b94f4ce-8866-4745-a08f-52d5ed815549", "name": "Pool Villa 401" },
+  { "id": "b6e92658-c877-45fc-b701-c88ff6c6abe4", "name": "Standard Room" },
+  { "id": "db1d9d87-f32c-4cdd-a8b8-614c819f5845", "name": "Superior Room" },
+  { "id": "244a664e-dc62-499d-a546-085f8d3ca390", "name": "Deluxe Room" },
+  { "id": "1e92470f-4039-4e1e-906b-8c891fa83db0", "name": "Family Suite" },
+  { "id": "2d184a0b-420c-47b3-96c1-8a7c36c204a9", "name": "Pool Villa" }
+]

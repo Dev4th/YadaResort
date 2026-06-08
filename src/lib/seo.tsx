@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 
-export const SITE_URL = 'https://yadahomestay.com';
+export const SITE_URL =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SITE_URL) ||
+  'https://yadahomestay.com';
 export const SITE_NAME = 'Yada Homestay | ญาดาโฮมสเตย์';
 export const RESORT_PHONE = '081-234-5678';
 export const RESORT_ADDRESS =
@@ -66,6 +68,16 @@ export function Seo({
     upsertMeta('meta[name="twitter:image"]', 'name', 'twitter:image', imageUrl);
     upsertLink('canonical', canonicalUrl);
 
+    const gscVerification = import.meta.env.VITE_GSC_VERIFICATION;
+    if (gscVerification) {
+      upsertMeta(
+        'meta[name="google-site-verification"]',
+        'name',
+        'google-site-verification',
+        gscVerification
+      );
+    }
+
     document.querySelectorAll('script[data-yada-seo="jsonld"]').forEach((node) => node.remove());
     if (structuredData) {
       const script = document.createElement('script');
@@ -116,3 +128,47 @@ export const websiteStructuredData = {
   url: SITE_URL,
   inLanguage: 'th-TH',
 };
+
+export const homeFaqStructuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'Yada Homestay อยู่ที่ไหน',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'ตั้งอยู่ที่ 80 ธงชัย ต.ธงชัย อ.เมือง จ.เพชรบุรี 76000 เหมาะสำหรับทริปพักผ่อนในเพชรบุรี',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'จองห้องพักออนไลน์ได้หรือไม่',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'สามารถเช็กห้องว่าง เลือกห้อง และส่งคำขอจองผ่านหน้าเว็บได้ทันที รวมถึงตรวจสอบสถานะการจองด้วยเบอร์โทร',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'เหมาะกับครอบครัวหรือคู่รักไหม',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'มีห้องหลายประเภท ทั้งห้องมาตรฐาน ห้องครอบครัว และพูลวิลล่า รองรับทั้งคู่รัก ครอบครัว และกลุ่มเพื่อน',
+      },
+    },
+  ],
+};
+
+export function breadcrumbStructuredData(items: Array<{ name: string; path: string }>) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.path.startsWith('http') ? item.path : `${SITE_URL}${item.path}`,
+    })),
+  };
+}

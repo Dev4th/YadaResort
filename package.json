@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/generate-sitemap.mjs && tsc -b && vite build",
+    "build": "node scripts/generate-sitemap.mjs && tsc -b && vite build && node scripts/prerender.mjs",
+    "build:fast": "node scripts/generate-sitemap.mjs && tsc -b && vite build",
+    "seo:export-rooms": "node scripts/export-seo-rooms.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
